@@ -237,30 +237,30 @@
 <body>
 
   <h1>🎛️ iOS Loop Station Pro</h1>
-  <p class="subtitle">Lightning & Headset Optimized • WebAudio Engine</p>
+  <p class="subtitle">Lightning & Headset Optimized • Master Loop Sync</p>
   
   <div class="main-container">
     
-    <!-- 1. Audio Setup & iOS Fix -->
+    <!-- 1. Audio Setup -->
     <div class="panel">
       <div class="routing-grid">
         <div class="field-group">
-          <label>1. Eingabe-Quelle (Mikrofon):</label>
+          <label>Eingabe-Quelle (Mikrofon):</label>
           <select id="mic-select"><option value="">Standard Mikrofon</option></select>
         </div>
 
         <div class="field-group">
-          <label>iOS Ausgabe Status:</label>
-          <select id="speaker-select" disabled><option value="">Auto (System Headset)</option></select>
+          <label>iOS Ausgabemodus:</label>
+          <select id="speaker-select" disabled><option value="">Auto (Lightning / Headset)</option></select>
         </div>
 
         <div class="field-group">
-          <label>Preamp Boost (Leise Signale):</label>
+          <label>Preamp Boost (Mikrofon-Pegel):</label>
           <input type="range" id="preamp-gain" min="1" max="6" step="0.1" value="3">
           <span class="val-readout" id="preamp-val">300% Boost</span>
         </div>
 
-        <button id="init-audio-btn" style="height: 38px; margin-top: auto;">🎙️ iOS Audio Entriegeln</button>
+        <button id="init-audio-btn" style="height: 38px; margin-top: auto;">🎙️ Engine Entriegeln</button>
       </div>
     </div>
 
@@ -282,7 +282,7 @@
     <div class="panel">
       <div class="mixer-header">
         <span>🔄 Live Loop Mixer</span>
-        <span style="font-size: 0.75rem; color: #8e8e93;" id="ios-info">iOS Audio: Inaktiv</span>
+        <span style="font-size: 0.75rem; color: #8e8e93;" id="ios-info">Audio Inaktiv</span>
       </div>
 
       <div class="mixer-strips">
@@ -401,6 +401,7 @@
 
   <script>
     let audioContext = null;
+    let rawMicStream = null;
     let audioStream = null;
     let inputPreampNode = null;
     let masterBusNode = null;
@@ -413,6 +414,10 @@
     let isMetronomeOn = false;
     let metronomeInterval = null;
     let currentBpm = 120;
+
+    // Master Sync Steuerung
+    let masterLoopDuration = null; // Länge in Sekunden der 1. Aufnahme
+    let masterStartTime = null;    // Phasen-Referenz für die Synchronisation
 
     const tracks = Array.from({ length: 4 }, () => ({
       state: 'EMPTY',
@@ -449,24 +454,17 @@
           if (device.kind === 'audioinput') {
             const option = document.createElement('option');
             option.value = device.deviceId;
-            option.text = device.label || `Eingang/Mikrofon ${micSelect.length + 1}`;
+            option.text = device.label || `Eingang ${micSelect.length + 1}`;
             micSelect.appendChild(option);
           }
         });
-      } catch (e) { console.error(e); }
+      } catch (e) { console.error("Device listing error:", e); }
     }
 
-    // Audio-Geräte abfragen
-    if (navigator.mediaDevices) {
-      navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
-        stream.getTracks().forEach(t => t.stop());
-        getDevices();
-      }).catch(() => getDevices());
-    }
-
-    // iOS Audio-Engine Entriegeln
+    // Engine Entriegeln mit iOS-robusten Fallbacks
     initAudioBtn.addEventListener('click', async () => {
       try {
+        // 1. AudioContext aufbauen & entsperren
         if (!audioContext) {
           const AudioContextClass = window.AudioContext || window.webkitAudioContext;
           audioContext = new AudioContextClass({ latencyHint: 'interactive' });
@@ -476,16 +474,16 @@
           await audioContext.resume();
         }
 
-        // iOS Dummy Sound zum Freischalten der Audio-Session über Lightning
+        // Dummy-Sound schaltet iOS Lightning Routing frei
         const dummyOsc = audioContext.createOscillator();
         const dummyGain = audioContext.createGain();
-        dummyGain.gain.value = 0.001; // Nahezu stumm
+        dummyGain.gain.value = 0.001;
         dummyOsc.connect(dummyGain);
         dummyGain.connect(audioContext.destination);
         dummyOsc.start();
-        dummyOsc.stop(audioContext.currentTime + 0.1);
+        dummyOsc.stop(audioContext.currentTime + 0.05);
 
-        // Master Bus Setup
+        // Master-Busse initialisieren
         masterBusNode = audioContext.createGain();
         masterBusNode.gain.value = 1.0;
         masterBusNode.connect(audioContext.destination);
@@ -493,7 +491,7 @@
         mixDestinationNode = audioContext.createMediaStreamDestination();
         masterBusNode.connect(mixDestinationNode);
 
-        // Kanal-Mixer aufbauen
+        // Mixer-Kanäle aufbauen
         tracks.forEach((track, i) => {
           track.bassNode = audioContext.createBiquadFilter();
           track.bassNode.type = 'lowshelf';
@@ -520,33 +518,39 @@
           startVUMeter(i);
         });
 
+        // 2. Mikrofon-Eingang aktivieren
         await setupInputStream();
+        await getDevices();
 
-        initAudioBtn.textContent = '✓ iOS Engine Aktiv';
+        initAudioBtn.textContent = '✓ Engine Aktiv';
         initAudioBtn.classList.add('mic-on');
-        iosInfo.textContent = 'iOS Headset/Lightning Bereit';
+        iosInfo.textContent = 'iOS Audio-Engine Bereit';
         iosInfo.style.color = '#34c759';
       } catch (err) {
-        alert('Fehler beim Initialisieren der Audio-Hardware auf iOS.');
-        console.error(err);
+        alert('Hardware-Fehler: Bitte erlaube den Mikrofon-Zugriff in Safari.');
+        console.error("Audio Init Error:", err);
       }
     });
 
     async function setupInputStream() {
-      if (audioStream) audioStream.getTracks().forEach(t => t.stop());
+      if (rawMicStream) {
+        rawMicStream.getTracks().forEach(t => t.stop());
+      }
 
       const selectedMicId = micSelect.value;
-      const constraints = {
-        audio: {
-          deviceId: selectedMicId ? { exact: selectedMicId } : undefined,
-          echoCancellation: false,
-          noiseSuppression: false,
-          autoGainControl: false
-        }
-      };
+      
+      // Fallback-Abfrage falls strikte Constraints auf iOS fehlschlagen
+      try {
+        const constraints = {
+          audio: selectedMicId ? { deviceId: { exact: selectedMicId } } : true
+        };
+        rawMicStream = await navigator.mediaDevices.getUserMedia(constraints);
+      } catch (err) {
+        console.warn("Strikte Audio-Constraints fehlgeschlagen, nutze Standard-Eingang:", err);
+        rawMicStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      }
 
-      const rawStream = await navigator.mediaDevices.getUserMedia(constraints);
-      const micSource = audioContext.createMediaStreamSource(rawStream);
+      const micSource = audioContext.createMediaStreamSource(rawMicStream);
       
       inputPreampNode = audioContext.createGain();
       inputPreampNode.gain.value = parseFloat(preampGainInput.value);
@@ -558,10 +562,16 @@
       audioStream = boostedDestination.stream;
     }
 
+    micSelect.addEventListener('change', async () => {
+      if (audioContext) await setupInputStream();
+    });
+
     preampGainInput.addEventListener('input', (e) => {
       const val = parseFloat(e.target.value);
       preampVal.textContent = Math.round(val * 100) + '% Boost';
-      if (inputPreampNode) inputPreampNode.gain.setValueAtTime(val, audioContext.currentTime);
+      if (inputPreampNode && audioContext) {
+        inputPreampNode.gain.setValueAtTime(val, audioContext.currentTime);
+      }
     });
 
     function handleMainAction(index) {
@@ -601,7 +611,16 @@
       track.recorder.onstop = async () => {
         const blob = new Blob(track.chunks, { type: track.recorder.mimeType || 'audio/mp4' });
         const arrayBuffer = await blob.arrayBuffer();
-        const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+        let audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+
+        // Master-Länge setzen beim allerersten Loop
+        if (masterLoopDuration === null) {
+          masterLoopDuration = audioBuffer.duration;
+          masterStartTime = audioContext.currentTime;
+          iosInfo.textContent = `Master Sync: ${masterLoopDuration.toFixed(2)}s`;
+        } else {
+          audioBuffer = cropOrPadToMasterLength(audioBuffer);
+        }
 
         await addLayerToTrack(index, audioBuffer);
         renderWaveform(index, audioBuffer);
@@ -636,7 +655,11 @@
       track.recorder.onstop = async () => {
         const blob = new Blob(track.chunks, { type: track.recorder.mimeType || 'audio/mp4' });
         const arrayBuffer = await blob.arrayBuffer();
-        const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+        let audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+
+        if (masterLoopDuration !== null) {
+          audioBuffer = cropOrPadToMasterLength(audioBuffer);
+        }
 
         await addLayerToTrack(index, audioBuffer);
       };
@@ -653,7 +676,29 @@
       updateUI(index);
     }
 
-    // Direktes WebAudio Node-Buffering (Keine HTML Audio-Elemente -> Verhindert iOS Output-Mute)
+    // Passt Folgespuren präzise an die Länge der 1. Aufnahme an
+    function cropOrPadToMasterLength(sourceBuffer) {
+      if (!masterLoopDuration) return sourceBuffer;
+
+      const sampleRate = sourceBuffer.sampleRate;
+      const targetLength = Math.floor(masterLoopDuration * sampleRate);
+      const newBuffer = audioContext.createBuffer(
+        sourceBuffer.numberOfChannels,
+        targetLength,
+        sampleRate
+      );
+
+      for (let channel = 0; channel < sourceBuffer.numberOfChannels; channel++) {
+        const srcData = sourceBuffer.getChannelData(channel);
+        const destData = newBuffer.getChannelData(channel);
+        
+        for (let i = 0; i < targetLength; i++) {
+          destData[i] = i < srcData.length ? srcData[i] : 0;
+        }
+      }
+      return newBuffer;
+    }
+
     async function addLayerToTrack(index, audioBuffer) {
       const track = tracks[index];
       const layerObj = { buffer: audioBuffer, sourceNode: null };
@@ -683,7 +728,16 @@
       source.buffer = layer.buffer;
       source.loop = true;
       source.connect(track.bassNode);
-      source.start(0);
+
+      // Synchrone Taktberechnung zur Master-Zeit
+      if (masterStartTime !== null && masterLoopDuration) {
+        const elapsedTime = audioContext.currentTime - masterStartTime;
+        const offset = elapsedTime % masterLoopDuration;
+        source.start(0, offset);
+      } else {
+        source.start(0);
+      }
+
       layer.sourceNode = source;
     }
 
@@ -722,6 +776,7 @@
       if (track.layers.length === 0) {
         track.state = 'EMPTY';
         clearCanvas(index);
+        checkAndResetMasterSync();
       }
 
       updateUI(index);
@@ -756,6 +811,16 @@
 
       clearCanvas(index);
       updateUI(index);
+      checkAndResetMasterSync();
+    }
+
+    function checkAndResetMasterSync() {
+      const allEmpty = tracks.every(t => t.layers.length === 0);
+      if (allEmpty) {
+        masterLoopDuration = null;
+        masterStartTime = null;
+        iosInfo.textContent = 'iOS Audio-Engine Bereit';
+      }
     }
 
     function updateUI(index) {
