@@ -2,8 +2,8 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>iOS Compatible Loop Station</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Web-Loop Station – SL V1.9 flyloetrump Vibecodeing </title>
   <style>
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     body {
@@ -15,7 +15,7 @@
       align-items: center;
       min-height: 100vh;
       margin: 0;
-      padding: 1rem 0.5rem;
+      padding: max(1rem, env(safe-area-inset-top)) max(0.5rem, env(safe-area-inset-right)) max(1rem, env(safe-area-inset-bottom)) max(0.5rem, env(safe-area-inset-left));
     }
 
     h1 {
@@ -35,7 +35,7 @@
 
     .main-container {
       width: 100%;
-      max-width: 960px;
+      max-width: 1100px;
       display: flex;
       flex-direction: column;
       gap: 1rem;
@@ -75,17 +75,18 @@
       color: #fff;
       border: 1px solid #3a3a48;
       border-radius: 8px;
-      padding: 0.5rem;
+      padding: 0.4rem;
       font-size: 0.85rem;
       outline: none;
     }
+    select:disabled { opacity: 0.5; cursor: not-allowed; }
 
     button {
       background: #ff3b30;
       color: white;
       border: none;
-      padding: 0.65rem 0.8rem;
-      font-size: 0.85rem;
+      padding: 0.5rem 0.7rem;
+      font-size: 0.8rem;
       font-weight: 600;
       border-radius: 8px;
       cursor: pointer;
@@ -102,12 +103,20 @@
     button.secondary { background: #2c2c36; color: #d0d0d8; border: 1px solid #3a3a48; }
     button.secondary:hover { background: #3a3a48; }
     button.active-toggle { background: #ff9500; color: #121216; }
+    button.fx-active { background: #bf5af2; color: #ffffff; border-color: #bf5af2; }
     button.muted { background: #ff9500; color: #121216; }
     button.export-btn { background: #007aff; }
 
     button.btn-rec { background: #ff3b30; color: white; }
     button.btn-play { background: #34c759; color: white; }
     button.btn-overdub { background: #ff9500; color: #121216; }
+    button.btn-limit { background: #555; color: #aaa; cursor: not-allowed; }
+    button.auto-suggest { animation: pulseSuggest 1.5s ease-in-out infinite; }
+
+    @keyframes pulseSuggest {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(52, 199, 89, 0.7); }
+      50% { box-shadow: 0 0 0 6px rgba(52, 199, 89, 0); }
+    }
 
     .val-readout {
       font-size: 0.75rem;
@@ -131,7 +140,7 @@
       gap: 0.6rem;
     }
 
-    @media (max-width: 820px) {
+    @media (max-width: 900px) {
       .mixer-strips { grid-template-columns: repeat(2, 1fr); }
     }
 
@@ -161,6 +170,37 @@
       padding: 2px 6px;
       border-radius: 10px;
       color: #aaa;
+      transition: background 0.2s, color 0.2s;
+    }
+    .layer-count.warn { background: #ff9500; color: #121216; }
+    .layer-count.max { background: #ff3b30; color: #fff; }
+
+    .waveform-container {
+      position: relative;
+      width: 100%;
+      height: 35px;
+      background: #0d0d10;
+      border-radius: 6px;
+      border: 1px solid #262630;
+      overflow: hidden;
+    }
+
+    .waveform-mini {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .progress-bar-line {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0%;
+      width: 2px;
+      background: #ff3b30;
+      box-shadow: 0 0 6px #ff3b30;
+      pointer-events: none;
+      transition: left 0.05s linear;
     }
 
     .fader-meter-wrapper {
@@ -173,10 +213,44 @@
     }
 
     input[type="range"].v-fader {
-      -webkit-appearance: slider-vertical;
+      -webkit-appearance: none;
+      appearance: none;
+      writing-mode: vertical-lr;
+      direction: rtl;
       width: 16px;
       height: 100%;
+      background: transparent;
+      padding: 0;
+    }
+    input[type="range"].v-fader::-webkit-slider-runnable-track {
+      width: 6px;
+      height: 100%;
       background: #2c2c36;
+      border-radius: 3px;
+    }
+    input[type="range"].v-fader::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 22px;
+      height: 12px;
+      background: #ff3b30;
+      border-radius: 3px;
+      margin-left: -8px;
+      cursor: pointer;
+    }
+    input[type="range"].v-fader::-moz-range-track {
+      width: 6px;
+      height: 100%;
+      background: #2c2c36;
+      border-radius: 3px;
+    }
+    input[type="range"].v-fader::-moz-range-thumb {
+      width: 22px;
+      height: 12px;
+      background: #ff3b30;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
     }
 
     .vu-meter {
@@ -196,12 +270,34 @@
       transition: height 0.05s ease;
     }
 
-    .waveform-mini {
-      width: 100%;
-      height: 30px;
-      background: #0d0d10;
-      border-radius: 6px;
-      border: 1px solid #262630;
+    .fx-section {
+      background: #1a1a22;
+      border: 1px solid #282834;
+      border-radius: 8px;
+      padding: 0.4rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+
+    .fx-title {
+      font-size: 0.65rem;
+      font-weight: bold;
+      color: #bf5af2;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .fx-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.2rem;
+    }
+
+    .fx-btn {
+      font-size: 0.65rem;
+      padding: 0.25rem;
+      border-radius: 4px;
     }
 
     .knob-grid {
@@ -222,6 +318,63 @@
     .action-row { display: flex; gap: 0.3rem; }
     .action-row button { flex: 1; padding: 0.4rem 0.2rem; font-size: 0.7rem; }
 
+    .nudge-section {
+      background: #17171c;
+      border: 1px solid #26262e;
+      border-radius: 8px;
+      padding: 0.35rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+    .nudge-title {
+      font-size: 0.6rem;
+      font-weight: bold;
+      color: #34c759;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .nudge-title .auto-badge {
+      font-size: 0.55rem;
+      background: #34c759;
+      color: #121216;
+      padding: 1px 4px;
+      border-radius: 4px;
+      display: none;
+    }
+    .nudge-title .auto-badge.visible { display: inline-block; }
+    .nudge-row {
+      display: flex;
+      gap: 0.25rem;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .nudge-readout {
+      font-size: 0.7rem;
+      font-weight: bold;
+      color: #8e8e93;
+      min-width: 56px;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+    }
+    .nudge-btn {
+      flex: 1;
+      font-size: 0.7rem;
+      padding: 0.3rem 0.2rem;
+    }
+    .nudge-step {
+      flex: 1;
+      font-size: 0.7rem;
+      padding: 0.2rem;
+      background: #2c2c36;
+      color: #fff;
+      border: 1px solid #3a3a48;
+      border-radius: 6px;
+    }
+
     .status-badge {
       font-size: 0.65rem;
       text-align: center;
@@ -232,13 +385,106 @@
       background: #222;
       color: #888;
     }
+
+    button:focus-visible, select:focus-visible, input:focus-visible {
+      outline: 2px solid #ff9500;
+      outline-offset: 2px;
+    }
+
+    body.modal-open { overflow: hidden; }
+
+    .info-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: max(1rem, env(safe-area-inset-top)) max(0.75rem, env(safe-area-inset-right)) max(1rem, env(safe-area-inset-bottom)) max(0.75rem, env(safe-area-inset-left));
+      background: rgba(0, 0, 0, 0.72);
+      backdrop-filter: blur(7px);
+      -webkit-backdrop-filter: blur(7px);
+    }
+
+    .info-overlay[hidden] { display: none; }
+
+    .info-dialog {
+      width: min(760px, 100%);
+      max-height: 88vh;
+      overflow: auto;
+      background: #1c1c22;
+      border: 1px solid #3a3a48;
+      border-radius: 16px;
+      box-shadow: 0 24px 70px rgba(0,0,0,0.55);
+    }
+
+    .info-dialog-header {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.9rem 1rem;
+      background: rgba(28, 28, 34, 0.96);
+      border-bottom: 1px solid #343440;
+    }
+
+    .info-dialog-header h2 {
+      margin: 0;
+      font-size: 1.05rem;
+      color: #ff9500;
+    }
+
+    .info-dialog-content {
+      padding: 0.4rem 1rem 1.1rem;
+      color: #d7d7df;
+      line-height: 1.48;
+      font-size: 0.88rem;
+    }
+
+    .info-dialog-content h3 {
+      margin: 1rem 0 0.3rem;
+      color: #f3f3f7;
+      font-size: 0.92rem;
+    }
+
+    .info-dialog-content p { margin: 0.35rem 0; }
+    .info-dialog-content ol,
+    .info-dialog-content ul { margin: 0.35rem 0 0.7rem; padding-left: 1.25rem; }
+    .info-dialog-content li { margin: 0.24rem 0; }
+    .info-note {
+      margin-top: 0.8rem;
+      padding: 0.7rem;
+      border-left: 3px solid #bf5af2;
+      background: #17171c;
+      border-radius: 6px;
+    }
+
+    @media (max-width: 600px) {
+      .mixer-strips { grid-template-columns: 1fr; }
+      .panel { padding: 0.8rem; }
+      button { min-height: 42px; }
+      .fx-btn { min-height: 36px; font-size: 0.72rem; }
+      .nudge-btn { min-height: 34px; }
+    }
   </style>
 </head>
 <body>
 
-  <h1>🎛️ iOS Loop Station Pro</h1>
-  <p class="subtitle">Lightning & Headset Optimized • Master Loop Sync</p>
+  <h1>🎛️ Loop Station SL V1.9</h1>
+ <!-- <p class="subtitle">AudioWorklet* PCM • Chained Overdub (Runde-für-Runde) • Layer-Limit 6 • Nudge • Auto-Sync   Createt Stefan Loeseke flyloetrump vibecoding </p>
+-->
   
+  <p class="subtitle">
+  AudioWorklet* PCM • Chained Overdub (Runde-für-Runde) • Layer-Limit 6 • Nudge • Auto-Sync
+  <br>
+  <span style="font-size: 0,5em; font-style: italic; color: #888888;">
+    Created by Stefan Loeseke flyloetrump vibecoding
+  </span>
+</p>
+
   <div class="main-container">
     
     <!-- 1. Audio Setup -->
@@ -250,29 +496,39 @@
         </div>
 
         <div class="field-group">
-          <label>iOS Ausgabemodus:</label>
-          <select id="speaker-select" disabled><option value="">Auto (Lightning / Headset)</option></select>
+          <label>Ausgabe-Quelle (Abhören):</label>
+          <select id="output-select"><option value="">Systemstandard</option></select>
+          <span class="val-readout" id="output-support-hint" style="display:none; font-size: 0.65rem;">Nicht unterstützt</span>
         </div>
 
         <div class="field-group">
           <label>Preamp Boost (Mikrofon-Pegel):</label>
-          <input type="range" id="preamp-gain" min="1" max="6" step="0.1" value="3">
-          <span class="val-readout" id="preamp-val">300% Boost</span>
+          <input type="range" id="preamp-gain" min="0.5" max="6" step="0.1" value="1.6">
+          <span class="val-readout" id="preamp-val">160%</span>
+        </div>
+
+        <div class="field-group">
+          <label>Master Output:</label>
+          <input type="range" id="master-output-gain" min="0.5" max="2.5" step="0.05" value="1.3">
+          <span class="val-readout" id="master-output-val">130%</span>
         </div>
 
         <button id="init-audio-btn" style="height: 38px; margin-top: auto;">🎙️ Engine Entriegeln</button>
       </div>
     </div>
 
-    <!-- 2. Global Control -->
+    <!-- 2. Global Control (Count-In & Sync) -->
     <div class="panel" style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.8rem;">
       <div style="display: flex; align-items: center; gap: 0.5rem;">
         <button id="metronome-btn" class="secondary">⏱️ Metronom</button>
+        <button id="countin-btn" class="secondary">🥁 Einzähler: Aus</button>
+        <button id="sync-mode-btn" class="secondary" title="Takt-Sync: Masteraufnahme folgt Metronom und Taktgrenzen.">🔒 Master: Takt-Sync</button>
         <input type="range" id="bpm-slider" min="60" max="200" value="120" style="width: 80px;">
         <span class="val-readout" id="bpm-val">120 BPM</span>
       </div>
 
       <div style="display: flex; gap: 0.4rem;">
+        <button id="info-btn" class="secondary" aria-haspopup="dialog" aria-controls="info-overlay">ℹ️ Info</button>
         <button id="record-mix-btn" class="export-btn">🔴 Mix Aufnehmen</button>
         <button id="clear-all-btn" class="secondary">🗑️ Reset</button>
       </div>
@@ -285,740 +541,3101 @@
         <span style="font-size: 0.75rem; color: #8e8e93;" id="ios-info">Audio Inaktiv</span>
       </div>
 
-      <div class="mixer-strips">
-        <!-- Channel 0 -->
-        <div class="channel-strip" id="strip-0">
-          <div class="strip-title"><span>CH 1</span><span class="layer-count" id="layer-count-0">0</span></div>
-          <canvas class="waveform-mini" id="canvas-0"></canvas>
-          <div class="status-badge" id="status-0">EMPTY</div>
-          <button class="btn-rec" onclick="handleMainAction(0)" id="main-btn-0">⏺️ REC</button>
-          <div class="action-row">
-            <button class="secondary" onclick="stopLoop(0)" id="stop-btn-0" disabled>⏹️</button>
-            <button class="secondary" onclick="undoLayer(0)" id="undo-btn-0" disabled>↩️</button>
-            <button class="secondary" onclick="redoLayer(0)" id="redo-btn-0" disabled>↪️</button>
-          </div>
-          <div class="fader-meter-wrapper">
-            <input type="range" class="v-fader" id="fader-0" min="0" max="4" step="0.05" value="1.5" oninput="updateVolume(0, this.value)">
-            <div class="vu-meter"><div class="vu-fill" id="vu-0"></div></div>
-          </div>
-          <div class="val-readout" style="text-align: center;" id="vol-val-0">150%</div>
-          <div class="knob-grid">
-            <div class="knob-control"><label>Bass</label><input type="range" min="-12" max="12" value="0" step="1" oninput="updateEQ(0, 'bass', this.value)"></div>
-            <div class="knob-control"><label>Treble</label><input type="range" min="-12" max="12" value="0" step="1" oninput="updateEQ(0, 'treble', this.value)"></div>
-          </div>
-          <div class="knob-control"><label>Pan</label><input type="range" min="-1" max="1" value="0" step="0.1" oninput="updatePan(0, this.value)"></div>
-          <div class="action-row">
-            <button class="secondary" id="mute-btn-0" onclick="toggleMute(0)">Mute</button>
-            <button class="secondary" onclick="clearTrack(0)">Clear</button>
-          </div>
-        </div>
-
-        <!-- Channel 1 -->
-        <div class="channel-strip" id="strip-1">
-          <div class="strip-title"><span>CH 2</span><span class="layer-count" id="layer-count-1">0</span></div>
-          <canvas class="waveform-mini" id="canvas-1"></canvas>
-          <div class="status-badge" id="status-1">EMPTY</div>
-          <button class="btn-rec" onclick="handleMainAction(1)" id="main-btn-1">⏺️ REC</button>
-          <div class="action-row">
-            <button class="secondary" onclick="stopLoop(1)" id="stop-btn-1" disabled>⏹️</button>
-            <button class="secondary" onclick="undoLayer(1)" id="undo-btn-1" disabled>↩️</button>
-            <button class="secondary" onclick="redoLayer(1)" id="redo-btn-1" disabled>↪️</button>
-          </div>
-          <div class="fader-meter-wrapper">
-            <input type="range" class="v-fader" id="fader-1" min="0" max="4" step="0.05" value="1.5" oninput="updateVolume(1, this.value)">
-            <div class="vu-meter"><div class="vu-fill" id="vu-1"></div></div>
-          </div>
-          <div class="val-readout" style="text-align: center;" id="vol-val-1">150%</div>
-          <div class="knob-grid">
-            <div class="knob-control"><label>Bass</label><input type="range" min="-12" max="12" value="0" step="1" oninput="updateEQ(1, 'bass', this.value)"></div>
-            <div class="knob-control"><label>Treble</label><input type="range" min="-12" max="12" value="0" step="1" oninput="updateEQ(1, 'treble', this.value)"></div>
-          </div>
-          <div class="knob-control"><label>Pan</label><input type="range" min="-1" max="1" value="0" step="0.1" oninput="updatePan(1, this.value)"></div>
-          <div class="action-row">
-            <button class="secondary" id="mute-btn-1" onclick="toggleMute(1)">Mute</button>
-            <button class="secondary" onclick="clearTrack(1)">Clear</button>
-          </div>
-        </div>
-
-        <!-- Channel 2 -->
-        <div class="channel-strip" id="strip-2">
-          <div class="strip-title"><span>CH 3</span><span class="layer-count" id="layer-count-2">0</span></div>
-          <canvas class="waveform-mini" id="canvas-2"></canvas>
-          <div class="status-badge" id="status-2">EMPTY</div>
-          <button class="btn-rec" onclick="handleMainAction(2)" id="main-btn-2">⏺️ REC</button>
-          <div class="action-row">
-            <button class="secondary" onclick="stopLoop(2)" id="stop-btn-2" disabled>⏹️</button>
-            <button class="secondary" onclick="undoLayer(2)" id="undo-btn-2" disabled>↩️</button>
-            <button class="secondary" onclick="redoLayer(2)" id="redo-btn-2" disabled>↪️</button>
-          </div>
-          <div class="fader-meter-wrapper">
-            <input type="range" class="v-fader" id="fader-2" min="0" max="4" step="0.05" value="1.5" oninput="updateVolume(2, this.value)">
-            <div class="vu-meter"><div class="vu-fill" id="vu-2"></div></div>
-          </div>
-          <div class="val-readout" style="text-align: center;" id="vol-val-2">150%</div>
-          <div class="knob-grid">
-            <div class="knob-control"><label>Bass</label><input type="range" min="-12" max="12" value="0" step="1" oninput="updateEQ(2, 'bass', this.value)"></div>
-            <div class="knob-control"><label>Treble</label><input type="range" min="-12" max="12" value="0" step="1" oninput="updateEQ(2, 'treble', this.value)"></div>
-          </div>
-          <div class="knob-control"><label>Pan</label><input type="range" min="-1" max="1" value="0" step="0.1" oninput="updatePan(2, this.value)"></div>
-          <div class="action-row">
-            <button class="secondary" id="mute-btn-2" onclick="toggleMute(2)">Mute</button>
-            <button class="secondary" onclick="clearTrack(2)">Clear</button>
-          </div>
-        </div>
-
-        <!-- Channel 3 -->
-        <div class="channel-strip" id="strip-3">
-          <div class="strip-title"><span>CH 4</span><span class="layer-count" id="layer-count-3">0</span></div>
-          <canvas class="waveform-mini" id="canvas-3"></canvas>
-          <div class="status-badge" id="status-3">EMPTY</div>
-          <button class="btn-rec" onclick="handleMainAction(3)" id="main-btn-3">⏺️ REC</button>
-          <div class="action-row">
-            <button class="secondary" onclick="stopLoop(3)" id="stop-btn-3" disabled>⏹️</button>
-            <button class="secondary" onclick="undoLayer(3)" id="undo-btn-3" disabled>↩️</button>
-            <button class="secondary" onclick="redoLayer(3)" id="redo-btn-3" disabled>↪️</button>
-          </div>
-          <div class="fader-meter-wrapper">
-            <input type="range" class="v-fader" id="fader-3" min="0" max="4" step="0.05" value="1.5" oninput="updateVolume(3, this.value)">
-            <div class="vu-meter"><div class="vu-fill" id="vu-3"></div></div>
-          </div>
-          <div class="val-readout" style="text-align: center;" id="vol-val-3">150%</div>
-          <div class="knob-grid">
-            <div class="knob-control"><label>Bass</label><input type="range" min="-12" max="12" value="0" step="1" oninput="updateEQ(3, 'bass', this.value)"></div>
-            <div class="knob-control"><label>Treble</label><input type="range" min="-12" max="12" value="0" step="1" oninput="updateEQ(3, 'treble', this.value)"></div>
-          </div>
-          <div class="knob-control"><label>Pan</label><input type="range" min="-1" max="1" value="0" step="0.1" oninput="updatePan(3, this.value)"></div>
-          <div class="action-row">
-            <button class="secondary" id="mute-btn-3" onclick="toggleMute(3)">Mute</button>
-            <button class="secondary" onclick="clearTrack(3)">Clear</button>
-          </div>
-        </div>
-
-      </div>
+      <div class="mixer-strips" id="mixer-strips"></div>
     </div>
 
   </div>
 
+  <div id="info-overlay" class="info-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="info-title">
+    <section class="info-dialog" tabindex="-1">
+      <header class="info-dialog-header">
+        <h2 id="info-title">Looper – Ablauf und Funktionen     </h2>
+		<p id="info-title">    Createt Stefan Loeseke flyloetrump vibecoding </p>
+        <button id="info-close-btn" class="secondary" type="button" aria-label="Information schließen">✕ Schließen</button>
+      </header>
+      <div class="info-dialog-content">
+        <h3>Schnellstart</h3>
+        <ol>
+          <li><strong>Engine entriegeln</strong> und den Mikrofonzugriff erlauben.</li>
+          <li>Eingabe- und Ausgabe-Quelle wählen (auf iPad ist Ausgabe immer Systemstandard).</li>
+          <li>Eingangspegel mit <strong>Preamp Boost</strong> einstellen.</li>
+          <li>Den Mastermodus wählen: <strong>Takt-Sync</strong> oder <strong>Master: Frei</strong>.</li>
+          <li>Auf einem leeren Channel <strong>REC</strong> drücken und die erste Sequenz aufnehmen.</li>
+        </ol>
+
+        <h3>Overdub – Chained Recording (Fix in V1.9)</h3>
+        <ol>
+          <li><strong>OVERDUB</strong> drücken → Aufnahme startet an der nächsten Loop-Grenze.</li>
+          <li>Du hörst die bisherigen Layer und spielst live dazu.</li>
+          <li>Am Ende der Runde wird die <strong>gerade aufgenommene Runde sofort als neuer Layer</strong> hinzugefügt und <strong>ab der aktuellen Position phasenkongruent</strong> mit den anderen Layern abgespielt. Die neue Runde ist also <strong>sofort hörbar</strong> – nicht erst eine Runde später.</li>
+          <li>Gleichzeitig läuft die Aufnahme automatisch in die nächste Runde weiter.</li>
+          <li>Wenn du fertig bist: <strong>✓ NACH RUNDE BEENDEN</strong> → die aktuelle Runde wird noch komplett aufgenommen, dann endet die Aufnahme.</li>
+        </ol>
+        <p>Jede aufgenommene Runde ist ein eigener Layer und kann per <strong>Undo</strong> entfernt werden.</p>
+
+        <h3>Layer-Limit (neu in V1.9)</h3>
+        <p>Pro Channel sind maximal <strong>6 Layer</strong> möglich. Bei Erreichen zeigt das Layer-Badge rot und der OVERDUB-Button wird deaktiviert. Entferne Layer per <strong>Undo</strong> oder <strong>Clear</strong>, um weiter aufzunehmen.</p>
+
+        <h3>Nudge – Feinjustage pro Channel</h3>
+        <ul>
+          <li><strong>◀ −</strong> / <strong>+ ▶</strong> verschieben die neueste Ebene in Schritten von 1/5/10/20 ms.</li>
+          <li><strong>0</strong> setzt den Nudge zurück.</li>
+          <li><strong>✓ Set</strong> bestätigt den aktuellen Wert als Channel-Basis-Offset. Alle zukünftigen Overdubs dieses Channels werden automatisch mit diesem Offset aufgenommen.</li>
+        </ul>
+
+        <h3>Auto-Cross-Correlation</h3>
+        <p>Nach jeder Overdub-Runde wird die neue Ebene mit dem Mix der anderen Ebenen korreliert. Bei guter Konfidenz wird der <strong>✓ Set-Button grün pulsierend</strong> markiert und der ermittelte Wert im Nudge-Feld angezeigt.</p>
+
+        <h3>Smart-Count-In-Stop</h3>
+        <p>Beim ersten Master-Loop mit Einzähler: <strong>⏹️ ENDE AUF TAKT</strong> drücken. Wurden im aktuellen Takt schon mindestens 2 Zählzeiten aufgenommen, wird der Takt vollendet; sonst wird auf die vorherige Taktgrenze gekürzt.</p>
+
+        <h3>Getrennte Ein-/Ausgänge</h3>
+        <p>Eingang (Mikrofon) und Ausgang (Abhören) können getrennt gewählt werden. Ausgangsrouting nutzt <code>AudioContext.setSinkId()</code> und funktioniert in <strong>Chrome / Edge ab v110</strong>. Auf <strong>iPad/Safari</strong> ist die Ausgangsauswahl deaktiviert.</p>
+
+        <h3>Effekte</h3>
+        <ul>
+          <li><strong>Octave -1:</strong> berechnet jede Aufnahmeebene im Hintergrund eine Oktave tiefer.</li>
+          <li><strong>Chorus, Echo, Hall:</strong> parallele Effektsends.</li>
+          <li><strong>FX Mix</strong> mischt zwischen Original und Effekten.</li>
+        </ul>
+
+        <div class="info-note"><strong>Hinweis:</strong> Für Aufnahmen Kopfhörer verwenden. Mikrofonzugriff benötigt HTTPS oder localhost.</div>
+      </div>
+    </section>
+  </div>
+
   <script>
-    let audioContext = null;
-    let rawMicStream = null;
-    let audioStream = null;
-    let inputPreampNode = null;
-    let masterBusNode = null;
-    let mixDestinationNode = null;
-    
-    let mixRecorder = null;
-    let mixChunks = [];
-    let isRecordingMix = false;
+'use strict';
 
-    let isMetronomeOn = false;
-    let metronomeInterval = null;
-    let currentBpm = 120;
+const TRACK_COUNT = 4;
+const BEATS_PER_BAR = 4;
+const SCHEDULING_SAFETY = 0.18;
+const FREE_MASTER_START_SAFETY = 0.08;
+const FREE_MASTER_STOP_SAFETY = 0.06;
+const MIN_FREE_MASTER_DURATION = 0.25;
+const NUDGE_LIMIT_SEC = 0.25;
+const SMART_STOP_MIN_BEATS = 2;
 
-    // Master Sync Steuerung
-    let masterLoopDuration = null; // Länge in Sekunden der 1. Aufnahme
-    let masterStartTime = null;    // Phasen-Referenz für die Synchronisation
+const OVERDUB_MIN_LOOKAHEAD = 0.06;
 
-    const tracks = Array.from({ length: 4 }, () => ({
-      state: 'EMPTY',
-      layers: [], // Speichert { buffer, sourceNode }
-      redoStack: [],
-      recorder: null,
-      chunks: [],
-      
-      channelGainNode: null,
-      bassNode: null,
-      trebleNode: null,
-      pannerNode: null,
-      analyserNode: null,
-      
-      volume: 1.5,
-      isMuted: false
-    }));
+// [V1.9] Layer-Limit pro Channel (Performance-Schutz für iPad).
+// Bei Erreichen wird OVERDUB deaktiviert.
+const MAX_LAYERS_PER_TRACK = 6;
+// Warnung ab dieser Anzahl (Badge wird orange)
+const WARN_LAYERS_THRESHOLD = 5;
 
-    const micSelect = document.getElementById('mic-select');
-    const initAudioBtn = document.getElementById('init-audio-btn');
-    const preampGainInput = document.getElementById('preamp-gain');
-    const preampVal = document.getElementById('preamp-val');
-    const bpmSlider = document.getElementById('bpm-slider');
-    const bpmVal = document.getElementById('bpm-val');
-    const metronomeBtn = document.getElementById('metronome-btn');
-    const recordMixBtn = document.getElementById('record-mix-btn');
-    const iosInfo = document.getElementById('ios-info');
+const MASTER_SYNC_MODE = Object.freeze({
+  GRID: 'grid',
+  FREE: 'free'
+});
 
-    async function getDevices() {
-      try {
-        const devices = await navigator.mediaDevices.enumerateDevices();
-        micSelect.innerHTML = '';
-        devices.forEach(device => {
-          if (device.kind === 'audioinput') {
-            const option = document.createElement('option');
-            option.value = device.deviceId;
-            option.text = device.label || `Eingang ${micSelect.length + 1}`;
-            micSelect.appendChild(option);
-          }
-        });
-      } catch (e) { console.error("Device listing error:", e); }
+const STATE = Object.freeze({
+  EMPTY: 'EMPTY',
+  ARMED: 'ARMED',
+  RECORDING: 'RECORDING',
+  PROCESSING: 'PROCESSING',
+  PLAYING: 'PLAYING',
+  OVERDUBBING: 'OVERDUBBING',
+  FINISHING: 'FINISHING',
+  STOPPED: 'STOPPED'
+});
+
+let audioContext = null;
+let audioInitialized = false;
+let rawMicStream = null;
+let micSourceNode = null;
+let inputPreampNode = null;
+let inputLimiterNode = null;
+let pcmCaptureNode = null;
+let pcmWorkletModuleUrl = null;
+let captureSequence = 0;
+let masterBusNode = null;
+let masterLimiterNode = null;
+let monitorBusNode = null;
+let mixDestinationNode = null;
+let sharedReverbBuffer = null;
+let visualLoopStarted = false;
+
+let workletFrameOffset = 0;
+let latencyCompensationFrames = 0;
+
+let selectedOutputDeviceId = '';
+let outputRoutingSupported = false;
+
+let octaveWorker = null;
+let octaveWorkerUrl = null;
+let octaveJobSequence = 0;
+let octaveLayerSequence = 0;
+const octaveJobs = new Map();
+
+let autoCorrJobSequence = 0;
+const autoCorrJobs = new Map();
+
+let mixRecorder = null;
+let mixChunks = [];
+let isRecordingMix = false;
+
+let isMetronomeOn = false;
+let metronomeTimer = null;
+let metronomeNextBeatIndex = 0;
+let metronomeClickNodes = [];
+let currentBpm = 120;
+let transportOriginTime = null;
+let masterSyncMode = MASTER_SYNC_MODE.GRID;
+let countInBars = 0;
+let countInToken = 0;
+let countInRunning = false;
+let countInTrackIndex = null;
+let countInUiTimer = null;
+let countInStartTimer = null;
+let countInClickNodes = [];
+
+let masterLoopDuration = null;
+let masterLoopFrames = null;
+let masterStartTime = null;
+let masterBeats = null;
+
+const tracks = Array.from({ length: TRACK_COUNT }, () => ({
+  state: STATE.EMPTY,
+  layers: [],
+  redoStack: [],
+
+  captureId: null,
+  captureKind: null,
+  captureStartTime: null,
+  captureStopTime: null,
+  captureBars: null,
+  captureSegments: [],
+  startUiTimer: null,
+  finishOverdubRequested: false,
+  previewId: null,
+  lastCycleIndex: -1,
+
+  inputNode: null,
+  dryGainNode: null,
+  wetGainNode: null,
+
+  chorusSendNode: null,
+  chorusDelayNode: null,
+  chorusLfoNode: null,
+  chorusLfoGainNode: null,
+  echoSendNode: null,
+  echoDelayNode: null,
+  echoFeedbackNode: null,
+  reverbSendNode: null,
+  reverbNode: null,
+
+  fxOctaverActive: false,
+  fxChorusActive: false,
+  fxEchoActive: false,
+  fxReverbActive: false,
+
+  octaveGainNode: null,
+  octaveRenderCount: 0,
+  octaveProgress: 0,
+  octaveGeneration: 0,
+  octaveOutputTarget: 0,
+
+  subMixVal: 1.0,
+  fxMixVal: 0.55,
+
+  bassNode: null,
+  trebleNode: null,
+  pannerNode: null,
+  channelGainNode: null,
+  analyserNode: null,
+  meterData: null,
+
+  volume: 1.1,
+  isMuted: false,
+
+  nudgeOffset: 0,
+  channelBaseOffset: 0,
+  nudgeStepMs: 5,
+  suggestedOffset: null,
+  autoCorrInProgress: false
+}));
+
+const micSelect = document.getElementById('mic-select');
+const outputSelect = document.getElementById('output-select');
+const outputSupportHint = document.getElementById('output-support-hint');
+const initAudioBtn = document.getElementById('init-audio-btn');
+const preampGainInput = document.getElementById('preamp-gain');
+const preampVal = document.getElementById('preamp-val');
+const masterOutputGainInput = document.getElementById('master-output-gain');
+const masterOutputVal = document.getElementById('master-output-val');
+const bpmSlider = document.getElementById('bpm-slider');
+const bpmVal = document.getElementById('bpm-val');
+const metronomeBtn = document.getElementById('metronome-btn');
+const countinBtn = document.getElementById('countin-btn');
+const syncModeBtn = document.getElementById('sync-mode-btn');
+const infoBtn = document.getElementById('info-btn');
+const infoOverlay = document.getElementById('info-overlay');
+const infoCloseBtn = document.getElementById('info-close-btn');
+const recordMixBtn = document.getElementById('record-mix-btn');
+const iosInfo = document.getElementById('ios-info');
+
+function setInfo(message, color = '#8e8e93') {
+  iosInfo.textContent = message;
+  iosInfo.style.color = color;
+}
+
+function positiveModulo(value, divisor) {
+  return ((value % divisor) + divisor) % divisor;
+}
+
+function setAudioParam(param, value, timeConstant = 0.015) {
+  if (!audioContext || !param) return;
+  param.cancelScheduledValues(audioContext.currentTime);
+  param.setTargetAtTime(value, audioContext.currentTime, timeConstant);
+}
+
+function chooseRecorderOptions() {
+  const candidates = [
+    'audio/mp4',
+    'audio/webm;codecs=opus',
+    'audio/webm',
+    'audio/ogg;codecs=opus'
+  ];
+  for (const mimeType of candidates) {
+    if (MediaRecorder.isTypeSupported(mimeType)) return { mimeType };
+  }
+  return {};
+}
+
+function extensionForMime(mimeType = '') {
+  const type = mimeType.toLowerCase();
+  if (type.includes('mp4')) return 'm4a';
+  if (type.includes('ogg')) return 'ogg';
+  if (type.includes('webm')) return 'webm';
+  return 'audio';
+}
+
+async function getDevices(preferredDeviceId = '') {
+  try {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const inputs = devices.filter(device => device.kind === 'audioinput');
+    const activeDeviceId = preferredDeviceId
+      || rawMicStream?.getAudioTracks?.()[0]?.getSettings?.().deviceId
+      || '';
+
+    micSelect.replaceChildren();
+    if (inputs.length === 0) {
+      const option = document.createElement('option');
+      option.value = '';
+      option.textContent = 'Kein Audio-Eingang gefunden';
+      micSelect.appendChild(option);
+      return;
     }
 
-    // Engine Entriegeln mit iOS-robusten Fallbacks
-    initAudioBtn.addEventListener('click', async () => {
-      try {
-        // 1. AudioContext aufbauen & entsperren
-        if (!audioContext) {
-          const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-          audioContext = new AudioContextClass({ latencyHint: 'interactive' });
-        }
-
-        if (audioContext.state === 'suspended') {
-          await audioContext.resume();
-        }
-
-        // Dummy-Sound schaltet iOS Lightning Routing frei
-        const dummyOsc = audioContext.createOscillator();
-        const dummyGain = audioContext.createGain();
-        dummyGain.gain.value = 0.001;
-        dummyOsc.connect(dummyGain);
-        dummyGain.connect(audioContext.destination);
-        dummyOsc.start();
-        dummyOsc.stop(audioContext.currentTime + 0.05);
-
-        // Master-Busse initialisieren
-        masterBusNode = audioContext.createGain();
-        masterBusNode.gain.value = 1.0;
-        masterBusNode.connect(audioContext.destination);
-
-        mixDestinationNode = audioContext.createMediaStreamDestination();
-        masterBusNode.connect(mixDestinationNode);
-
-        // Mixer-Kanäle aufbauen
-        tracks.forEach((track, i) => {
-          track.bassNode = audioContext.createBiquadFilter();
-          track.bassNode.type = 'lowshelf';
-          track.bassNode.frequency.value = 250;
-
-          track.trebleNode = audioContext.createBiquadFilter();
-          track.trebleNode.type = 'highshelf';
-          track.trebleNode.frequency.value = 4000;
-
-          track.pannerNode = audioContext.createStereoPanner();
-          track.channelGainNode = audioContext.createGain();
-          track.channelGainNode.gain.value = track.volume;
-
-          track.analyserNode = audioContext.createAnalyser();
-          track.analyserNode.fftSize = 64;
-
-          track.bassNode
-            .connect(track.trebleNode)
-            .connect(track.pannerNode)
-            .connect(track.channelGainNode)
-            .connect(track.analyserNode)
-            .connect(masterBusNode);
-            
-          startVUMeter(i);
-        });
-
-        // 2. Mikrofon-Eingang aktivieren
-        await setupInputStream();
-        await getDevices();
-
-        initAudioBtn.textContent = '✓ Engine Aktiv';
-        initAudioBtn.classList.add('mic-on');
-        iosInfo.textContent = 'iOS Audio-Engine Bereit';
-        iosInfo.style.color = '#34c759';
-      } catch (err) {
-        alert('Hardware-Fehler: Bitte erlaube den Mikrofon-Zugriff in Safari.');
-        console.error("Audio Init Error:", err);
-      }
+    inputs.forEach((device, index) => {
+      const option = document.createElement('option');
+      option.value = device.deviceId;
+      option.textContent = device.label || `Eingang ${index + 1}`;
+      option.selected = device.deviceId === activeDeviceId;
+      micSelect.appendChild(option);
     });
+  } catch (error) {
+    console.error('Device listing error:', error);
+  }
+}
 
-    async function setupInputStream() {
-      if (rawMicStream) {
-        rawMicStream.getTracks().forEach(t => t.stop());
-      }
+async function getOutputDevices(preferredDeviceId = '') {
+  if (!outputSelect) return;
 
-      const selectedMicId = micSelect.value;
-      
-      // Fallback-Abfrage falls strikte Constraints auf iOS fehlschlagen
-      try {
-        const constraints = {
-          audio: selectedMicId ? { deviceId: { exact: selectedMicId } } : true
-        };
-        rawMicStream = await navigator.mediaDevices.getUserMedia(constraints);
-      } catch (err) {
-        console.warn("Strikte Audio-Constraints fehlgeschlagen, nutze Standard-Eingang:", err);
-        rawMicStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      }
+  outputRoutingSupported = typeof audioContext?.setSinkId === 'function';
 
-      const micSource = audioContext.createMediaStreamSource(rawMicStream);
-      
-      inputPreampNode = audioContext.createGain();
-      inputPreampNode.gain.value = parseFloat(preampGainInput.value);
+  outputSelect.replaceChildren();
 
-      const boostedDestination = audioContext.createMediaStreamDestination();
-      micSource.connect(inputPreampNode);
-      inputPreampNode.connect(boostedDestination);
+  const defaultOption = document.createElement('option');
+  defaultOption.value = '';
+  defaultOption.textContent = 'Systemstandard';
+  outputSelect.appendChild(defaultOption);
 
-      audioStream = boostedDestination.stream;
+  if (!outputRoutingSupported) {
+    outputSelect.disabled = true;
+    if (outputSupportHint) outputSupportHint.style.display = 'inline';
+    return;
+  }
+
+  if (outputSupportHint) outputSupportHint.style.display = 'none';
+
+  try {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const outputs = devices.filter(device => device.kind === 'audiooutput');
+    const activeId = preferredDeviceId || selectedOutputDeviceId || '';
+
+    outputs.forEach((device, index) => {
+      const option = document.createElement('option');
+      option.value = device.deviceId;
+      option.textContent = device.label || `Ausgang ${index + 1}`;
+      option.selected = device.deviceId === activeId;
+      outputSelect.appendChild(option);
+    });
+  } catch (error) {
+    console.error('Output device listing error:', error);
+  }
+}
+
+function createReverbImpulse(context) {
+  const rate = context.sampleRate;
+  const length = Math.floor(rate * 1.8);
+  const impulse = context.createBuffer(2, length, rate);
+
+  for (let channel = 0; channel < impulse.numberOfChannels; channel++) {
+    const channelData = impulse.getChannelData(channel);
+    for (let i = 0; i < length; i++) {
+      const envelope = Math.pow(1 - i / length, 2.7);
+      channelData[i] = (Math.random() * 2 - 1) * envelope;
+    }
+  }
+  return impulse;
+}
+
+function createPcmWorkletModuleUrl() {
+  const source = `
+class PcmCaptureProcessor extends AudioWorkletProcessor {
+  constructor() {
+    super();
+    this.sessions = new Map();
+    this.port.onmessage = event => this.handleCommand(event.data || {});
+  }
+
+  handleCommand(message) {
+    const id = message.id;
+
+    if (message.type === 'clock-probe') {
+      this.port.postMessage({ type: 'clock-probe', frame: currentFrame });
+      return;
     }
 
-    micSelect.addEventListener('change', async () => {
-      if (audioContext) await setupInputStream();
-    });
+    if (!id) return;
 
-    preampGainInput.addEventListener('input', (e) => {
-      const val = parseFloat(e.target.value);
-      preampVal.textContent = Math.round(val * 100) + '% Boost';
-      if (inputPreampNode && audioContext) {
-        inputPreampNode.gain.setValueAtTime(val, audioContext.currentTime);
-      }
-    });
-
-    function handleMainAction(index) {
-      if (!audioStream || !audioContext) return alert('Bitte zuerst die Engine entriegeln!');
-
-      const track = tracks[index];
-
-      switch (track.state) {
-        case 'EMPTY':
-          startFirstRecording(index);
-          break;
-        case 'RECORDING':
-          stopRecordingAndPlay(index);
-          break;
-        case 'PLAYING':
-        case 'STOPPED':
-          startOverdub(index);
-          break;
-        case 'OVERDUBBING':
-          stopOverdubAndPlay(index);
-          break;
-      }
-    }
-
-    function startFirstRecording(index) {
-      const track = tracks[index];
-      track.chunks = [];
-      track.redoStack = [];
-
-      let options = {};
-      if (MediaRecorder.isTypeSupported('audio/mp4')) options = { mimeType: 'audio/mp4' };
-      else if (MediaRecorder.isTypeSupported('audio/aac')) options = { mimeType: 'audio/aac' };
-
-      track.recorder = new MediaRecorder(audioStream, options);
-      track.recorder.ondataavailable = e => { if (e.data.size > 0) track.chunks.push(e.data); };
-
-      track.recorder.onstop = async () => {
-        const blob = new Blob(track.chunks, { type: track.recorder.mimeType || 'audio/mp4' });
-        const arrayBuffer = await blob.arrayBuffer();
-        let audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-
-        // Master-Länge setzen beim allerersten Loop
-        if (masterLoopDuration === null) {
-          masterLoopDuration = audioBuffer.duration;
-          masterStartTime = audioContext.currentTime;
-          iosInfo.textContent = `Master Sync: ${masterLoopDuration.toFixed(2)}s`;
-        } else {
-          audioBuffer = cropOrPadToMasterLength(audioBuffer);
-        }
-
-        await addLayerToTrack(index, audioBuffer);
-        renderWaveform(index, audioBuffer);
-        playLoop(index);
+    if (message.type === 'start') {
+      const mode = message.mode;
+      const startFrame = Math.max(0, Math.round(message.startFrame));
+      const session = {
+        id,
+        trackIndex: message.trackIndex,
+        mode,
+        startFrame,
+        stopFrame: Number.isFinite(message.stopFrame) ? Math.round(message.stopFrame) : null,
+        finishRequested: false,
+        sequence: 0,
+        totalFrames: 0,
+        previewStopFrame: null
       };
 
-      track.recorder.start(100);
-      track.state = 'RECORDING';
-      updateUI(index);
-    }
-
-    function stopRecordingAndPlay(index) {
-      const track = tracks[index];
-      track.recorder.stop();
-      track.state = 'PLAYING';
-      updateUI(index);
-    }
-
-    function startOverdub(index) {
-      const track = tracks[index];
-      if (track.state === 'STOPPED') playLoop(index);
-
-      track.chunks = [];
-      track.redoStack = [];
-
-      let options = {};
-      if (MediaRecorder.isTypeSupported('audio/mp4')) options = { mimeType: 'audio/mp4' };
-
-      track.recorder = new MediaRecorder(audioStream, options);
-      track.recorder.ondataavailable = e => { if (e.data.size > 0) track.chunks.push(e.data); };
-
-      track.recorder.onstop = async () => {
-        const blob = new Blob(track.chunks, { type: track.recorder.mimeType || 'audio/mp4' });
-        const arrayBuffer = await blob.arrayBuffer();
-        let audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-
-        if (masterLoopDuration !== null) {
-          audioBuffer = cropOrPadToMasterLength(audioBuffer);
-        }
-
-        await addLayerToTrack(index, audioBuffer);
-      };
-
-      track.recorder.start(100);
-      track.state = 'OVERDUBBING';
-      updateUI(index);
-    }
-
-    function stopOverdubAndPlay(index) {
-      const track = tracks[index];
-      track.recorder.stop();
-      track.state = 'PLAYING';
-      updateUI(index);
-    }
-
-    // Passt Folgespuren präzise an die Länge der 1. Aufnahme an
-    function cropOrPadToMasterLength(sourceBuffer) {
-      if (!masterLoopDuration) return sourceBuffer;
-
-      const sampleRate = sourceBuffer.sampleRate;
-      const targetLength = Math.floor(masterLoopDuration * sampleRate);
-      const newBuffer = audioContext.createBuffer(
-        sourceBuffer.numberOfChannels,
-        targetLength,
-        sampleRate
-      );
-
-      for (let channel = 0; channel < sourceBuffer.numberOfChannels; channel++) {
-        const srcData = sourceBuffer.getChannelData(channel);
-        const destData = newBuffer.getChannelData(channel);
-        
-        for (let i = 0; i < targetLength; i++) {
-          destData[i] = i < srcData.length ? srcData[i] : 0;
-        }
-      }
-      return newBuffer;
-    }
-
-    async function addLayerToTrack(index, audioBuffer) {
-      const track = tracks[index];
-      const layerObj = { buffer: audioBuffer, sourceNode: null };
-      track.layers.push(layerObj);
-
-      if (track.state === 'PLAYING' || track.state === 'OVERDUBBING') {
-        playSingleLayer(index, layerObj);
-      }
-
-      updateUI(index);
-    }
-
-    function playLoop(index) {
-      const track = tracks[index];
-      if (track.layers.length === 0) return;
-
-      stopAllLayerNodes(index);
-      track.layers.forEach(layer => playSingleLayer(index, layer));
-
-      track.state = 'PLAYING';
-      updateUI(index);
-    }
-
-    function playSingleLayer(index, layer) {
-      const track = tracks[index];
-      const source = audioContext.createBufferSource();
-      source.buffer = layer.buffer;
-      source.loop = true;
-      source.connect(track.bassNode);
-
-      // Synchrone Taktberechnung zur Master-Zeit
-      if (masterStartTime !== null && masterLoopDuration) {
-        const elapsedTime = audioContext.currentTime - masterStartTime;
-        const offset = elapsedTime % masterLoopDuration;
-        source.start(0, offset);
+      if (mode === 'free') {
+        session.chunkSize = 16384;
+        session.chunks = [];
+        session.buffer = new Float32Array(session.chunkSize);
+        session.filled = 0;
+        session.finalBuffer = null;
+      } else if (mode === 'fixed') {
+        const length = Math.max(1, session.stopFrame - startFrame);
+        session.buffer = new Float32Array(length);
+      } else if (mode === 'continuous') {
+        session.chunkFrames = Math.max(1, Math.round(message.chunkFrames));
+        session.buffer = new Float32Array(session.chunkFrames);
+        session.cycleIndex = 0;
       } else {
-        source.start(0);
+        return;
       }
 
-      layer.sourceNode = source;
+      this.sessions.set(id, session);
+      return;
     }
 
-    function stopAllLayerNodes(index) {
-      const track = tracks[index];
-      track.layers.forEach(layer => {
-        if (layer.sourceNode) {
-          try { layer.sourceNode.stop(); layer.sourceNode.disconnect(); } catch (e) {}
-          layer.sourceNode = null;
-        }
+    const session = this.sessions.get(id);
+    if (!session) return;
+
+    if (message.type === 'set-stop') {
+      const stopFrame = Math.max(session.startFrame + 1, Math.round(message.stopFrame));
+      session.stopFrame = stopFrame;
+      if (session.mode === 'free') this.prepareFreeStop(session, stopFrame);
+    } else if (message.type === 'finish') {
+      session.finishRequested = true;
+    } else if (message.type === 'stop-preview') {
+      session.previewStopFrame = Math.max(currentFrame, Math.round(message.stopFrame));
+    } else if (message.type === 'stop-preview-now' || message.type === 'cancel') {
+      this.sessions.delete(id);
+      this.port.postMessage({
+        type: message.type === 'cancel' ? 'cancelled' : 'preview-ended',
+        id,
+        trackIndex: session.trackIndex
       });
     }
+  }
 
-    function stopLoop(index) {
-      const track = tracks[index];
-      if (track.state === 'OVERDUBBING' && track.recorder) {
-        track.recorder.stop();
+  retainFreeChunk(session) {
+    if (session.filled <= 0) return;
+    session.chunks.push(session.buffer.slice(0, session.filled));
+    session.buffer = new Float32Array(session.chunkSize);
+    session.filled = 0;
+  }
+
+  writeFree(session, input, sourceOffset, count) {
+    if (session.finalBuffer) {
+      const destinationOffset = session.totalFrames;
+      const writable = Math.min(count, session.finalBuffer.length - destinationOffset);
+      if (writable > 0 && input) {
+        session.finalBuffer.set(input.subarray(sourceOffset, sourceOffset + writable), destinationOffset);
       }
-
-      stopAllLayerNodes(index);
-      track.state = 'STOPPED';
-      updateUI(index);
+      session.totalFrames += Math.max(0, writable);
+      return;
     }
 
-    function undoLayer(index) {
-      const track = tracks[index];
-      if (track.layers.length === 0) return;
-
-      const removed = track.layers.pop();
-      if (removed.sourceNode) {
-        try { removed.sourceNode.stop(); removed.sourceNode.disconnect(); } catch (e) {}
+    let remaining = count;
+    let readOffset = sourceOffset;
+    while (remaining > 0) {
+      const writable = Math.min(remaining, session.chunkSize - session.filled);
+      if (input) {
+        session.buffer.set(input.subarray(readOffset, readOffset + writable), session.filled);
       }
+      session.filled += writable;
+      session.totalFrames += writable;
+      readOffset += writable;
+      remaining -= writable;
+      if (session.filled === session.chunkSize) this.retainFreeChunk(session);
+    }
+  }
 
-      track.redoStack.push(removed);
+  prepareFreeStop(session, stopFrame) {
+    const finalLength = Math.max(1, stopFrame - session.startFrame);
+    const finalBuffer = new Float32Array(finalLength);
+    let offset = 0;
 
-      if (track.layers.length === 0) {
-        track.state = 'EMPTY';
-        clearCanvas(index);
-        checkAndResetMasterSync();
-      }
-
-      updateUI(index);
+    for (const chunk of session.chunks) {
+      const writable = Math.min(chunk.length, finalLength - offset);
+      if (writable <= 0) break;
+      finalBuffer.set(chunk.subarray(0, writable), offset);
+      offset += writable;
     }
 
-    function redoLayer(index) {
-      const track = tracks[index];
-      if (track.redoStack.length === 0) return;
-
-      const restored = track.redoStack.pop();
-      track.layers.push(restored);
-
-      if (track.state === 'PLAYING') {
-        playSingleLayer(index, restored);
-      } else if (track.state === 'STOPPED' || track.state === 'EMPTY') {
-        playLoop(index);
-      }
-
-      updateUI(index);
+    if (offset < finalLength && session.filled > 0) {
+      const writable = Math.min(session.filled, finalLength - offset);
+      finalBuffer.set(session.buffer.subarray(0, writable), offset);
+      offset += writable;
     }
 
-    function clearTrack(index) {
-      const track = tracks[index];
-      if (track.recorder && track.recorder.state !== 'inactive') {
-        track.recorder.stop();
-      }
+    session.finalBuffer = finalBuffer;
+    session.chunks = [];
+    session.buffer = null;
+    session.filled = 0;
+    session.totalFrames = offset;
+  }
 
-      stopAllLayerNodes(index);
-      track.layers = [];
-      track.redoStack = [];
-      track.state = 'EMPTY';
+  beginFreePreview(session) {
+    if (!session.finalBuffer) this.prepareFreeStop(session, session.stopFrame);
+    const previewBuffer = session.finalBuffer;
+    const transferableCopy = previewBuffer.slice();
 
-      clearCanvas(index);
-      updateUI(index);
-      checkAndResetMasterSync();
+    session.mode = 'preview';
+    session.previewBuffer = previewBuffer;
+    session.previewStartFrame = session.stopFrame;
+    session.previewStopFrame = null;
+
+    this.port.postMessage({
+      type: 'complete',
+      id: session.id,
+      trackIndex: session.trackIndex,
+      mode: 'free',
+      startFrame: session.startFrame,
+      stopFrame: session.stopFrame,
+      totalFrames: previewBuffer.length,
+      samples: transferableCopy,
+      previewActive: true
+    }, [transferableCopy.buffer]);
+  }
+
+  writePreview(session, output, blockStart, blockEnd) {
+    if (!output || !session.previewBuffer?.length) return;
+    const previewEnd = session.previewStopFrame === null
+      ? blockEnd
+      : Math.min(blockEnd, session.previewStopFrame);
+    const writeStart = Math.max(blockStart, session.previewStartFrame);
+    if (writeStart >= previewEnd) return;
+
+    for (let frame = writeStart; frame < previewEnd; frame++) {
+      const sourceIndex = (frame - session.previewStartFrame) % session.previewBuffer.length;
+      output[frame - blockStart] += session.previewBuffer[sourceIndex];
     }
+  }
 
-    function checkAndResetMasterSync() {
-      const allEmpty = tracks.every(t => t.layers.length === 0);
-      if (allEmpty) {
-        masterLoopDuration = null;
-        masterStartTime = null;
-        iosInfo.textContent = 'iOS Audio-Engine Bereit';
-      }
-    }
-
-    function updateUI(index) {
-      const track = tracks[index];
-      const mainBtn = document.getElementById(`main-btn-${index}`);
-      const stopBtn = document.getElementById(`stop-btn-${index}`);
-      const undoBtn = document.getElementById(`undo-btn-${index}`);
-      const redoBtn = document.getElementById(`redo-btn-${index}`);
-      const statusBadge = document.getElementById(`status-${index}`);
-      const layerCount = document.getElementById(`layer-count-${index}`);
-
-      statusBadge.textContent = track.state;
-      layerCount.textContent = `${track.layers.length}`;
-
-      switch (track.state) {
-        case 'EMPTY':
-          mainBtn.textContent = '⏺️ REC';
-          mainBtn.className = 'btn-rec';
-          stopBtn.disabled = true;
-          break;
-        case 'RECORDING':
-          mainBtn.textContent = '⏹️ END LOOP';
-          mainBtn.className = 'btn-play';
-          stopBtn.disabled = false;
-          break;
-        case 'PLAYING':
-          mainBtn.textContent = '🟠 OVERDUB';
-          mainBtn.className = 'btn-overdub';
-          stopBtn.disabled = false;
-          break;
-        case 'OVERDUBBING':
-          mainBtn.textContent = '▶️ PLAY (LOCK)';
-          mainBtn.className = 'btn-play';
-          stopBtn.disabled = false;
-          break;
-        case 'STOPPED':
-          mainBtn.textContent = '▶️ PLAY';
-          mainBtn.className = 'btn-play';
-          stopBtn.disabled = true;
-          break;
-      }
-
-      undoBtn.disabled = track.layers.length === 0;
-      redoBtn.disabled = track.redoStack.length === 0;
-    }
-
-    function updateVolume(index, val) {
-      const num = parseFloat(val);
-      tracks[index].volume = num;
-      document.getElementById(`vol-val-${index}`).textContent = Math.round(num * 100) + '%';
-      if (tracks[index].channelGainNode && !tracks[index].isMuted) {
-        tracks[index].channelGainNode.gain.setValueAtTime(num, audioContext.currentTime);
+  writeFixed(session, input, blockStart, captureStart, captureEnd) {
+    const sourceOffset = captureStart - blockStart;
+    const destinationOffset = captureStart - session.startFrame;
+    const count = captureEnd - captureStart;
+    if (input) {
+      const available = Math.max(0, Math.min(count, input.length - sourceOffset));
+      if (available > 0) {
+        session.buffer.set(input.subarray(sourceOffset, sourceOffset + available), destinationOffset);
       }
     }
+    session.totalFrames += count;
+  }
 
-    function updateEQ(index, type, val) {
-      const num = parseFloat(val);
-      if (type === 'bass' && tracks[index].bassNode) {
-        tracks[index].bassNode.gain.setValueAtTime(num, audioContext.currentTime);
-      } else if (type === 'treble' && tracks[index].trebleNode) {
-        tracks[index].trebleNode.gain.setValueAtTime(num, audioContext.currentTime);
-      }
-    }
+  finishFixed(session) {
+    const samples = session.buffer;
+    this.port.postMessage({
+      type: 'complete',
+      id: session.id,
+      trackIndex: session.trackIndex,
+      mode: session.mode,
+      startFrame: session.startFrame,
+      stopFrame: session.stopFrame,
+      totalFrames: samples.length,
+      samples
+    }, [samples.buffer]);
+    this.sessions.delete(session.id);
+  }
 
-    function updatePan(index, val) {
-      if (tracks[index].pannerNode) {
-        tracks[index].pannerNode.pan.setValueAtTime(parseFloat(val), audioContext.currentTime);
-      }
-    }
+  writeContinuous(session, input, blockStart, captureStart, captureEnd) {
+    let frame = captureStart;
+    while (frame < captureEnd) {
+      const relativeFrame = frame - session.startFrame;
+      const offsetInCycle = ((relativeFrame % session.chunkFrames) + session.chunkFrames)
+                            % session.chunkFrames;
+      const writable = Math.min(captureEnd - frame, session.chunkFrames - offsetInCycle);
+      const sourceOffset = frame - blockStart;
 
-    function toggleMute(index) {
-      const track = tracks[index];
-      const btn = document.getElementById(`mute-btn-${index}`);
-      track.isMuted = !track.isMuted;
-
-      if (track.channelGainNode) {
-        track.channelGainNode.gain.setValueAtTime(track.isMuted ? 0 : track.volume, audioContext.currentTime);
-      }
-
-      btn.textContent = track.isMuted ? 'Unmute' : 'Mute';
-      btn.classList.toggle('muted', track.isMuted);
-    }
-
-    function startVUMeter(index) {
-      const track = tracks[index];
-      const vuFill = document.getElementById(`vu-${index}`);
-      const dataArray = new Uint8Array(track.analyserNode.frequencyBinCount);
-
-      function updateMeter() {
-        if (track.state === 'PLAYING' || track.state === 'OVERDUBBING') {
-          track.analyserNode.getByteFrequencyData(dataArray);
-          let sum = 0;
-          for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
-          let average = sum / dataArray.length;
-          let pct = Math.min(100, Math.round((average / 128) * 100));
-          vuFill.style.height = pct + '%';
-        } else {
-          vuFill.style.height = '0%';
+      if (input) {
+        const available = Math.max(0, Math.min(writable, input.length - sourceOffset));
+        if (available > 0) {
+          session.buffer.set(input.subarray(sourceOffset, sourceOffset + available), offsetInCycle);
         }
-        requestAnimationFrame(updateMeter);
       }
-      updateMeter();
-    }
+      session.totalFrames += writable;
+      frame += writable;
 
-    function renderWaveform(index, audioBuffer) {
-      const canvas = document.getElementById(`canvas-${index}`);
-      const ctx = canvas.getContext('2d');
-      canvas.width = canvas.offsetWidth;
-      canvas.height = canvas.offsetHeight;
+      if (offsetInCycle + writable === session.chunkFrames) {
+        const samples = session.buffer;
+        const cycleEndFrame = session.startFrame + (session.cycleIndex + 1) * session.chunkFrames;
+        const cycleStartFrame = cycleEndFrame - session.chunkFrames;
+        this.port.postMessage({
+          type: 'cycle',
+          id: session.id,
+          trackIndex: session.trackIndex,
+          cycleIndex: session.cycleIndex++,
+          startFrame: session.startFrame,
+          cycleStartFrame,
+          cycleEndFrame,
+          samples
+        }, [samples.buffer]);
 
-      const rawData = audioBuffer.getChannelData(0);
-      const samples = 35;
-      const blockSize = Math.floor(rawData.length / samples);
-
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = '#ff9500';
-
-      const barWidth = canvas.width / samples;
-      for (let i = 0; i < samples; i++) {
-        let sum = 0;
-        for (let j = 0; j < blockSize; j++) sum += Math.abs(rawData[i * blockSize + j]);
-        const barHeight = Math.max(2, (sum / blockSize) * canvas.height * 2);
-        ctx.fillRect(i * barWidth, (canvas.height - barHeight) / 2, barWidth - 1, barHeight);
+        if (session.finishRequested) {
+          this.port.postMessage({
+            type: 'ended',
+            id: session.id,
+            trackIndex: session.trackIndex,
+            totalFrames: session.totalFrames
+          });
+          this.sessions.delete(session.id);
+          return false;
+        }
+        session.buffer = new Float32Array(session.chunkFrames);
       }
     }
+    return true;
+  }
 
-    function clearCanvas(index) {
-      const canvas = document.getElementById(`canvas-${index}`);
-      const ctx = canvas.getContext('2d');
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+  process(inputs, outputs) {
+    for (const output of outputs) {
+      for (const channel of output) channel.fill(0);
     }
 
-    document.getElementById('clear-all-btn').addEventListener('click', () => {
-      tracks.forEach((_, i) => clearTrack(i));
-    });
+    const input = inputs[0] && inputs[0][0] ? inputs[0][0] : null;
+    const blockSize = input?.length || outputs[0]?.[0]?.length || 128;
+    const blockStart = currentFrame;
+    const blockEnd = blockStart + blockSize;
 
-    bpmSlider.addEventListener('input', (e) => {
-      currentBpm = parseInt(e.target.value);
-      bpmVal.textContent = currentBpm + ' BPM';
-      if (isMetronomeOn) restartMetronome();
-    });
+    for (const session of Array.from(this.sessions.values())) {
+      const output = outputs[session.trackIndex]?.[0] || null;
 
-    metronomeBtn.addEventListener('click', () => {
-      if (!audioContext) return alert('Bitte zuerst Engine entriegeln!');
-      isMetronomeOn = !isMetronomeOn;
-      metronomeBtn.classList.toggle('active-toggle', isMetronomeOn);
-      isMetronomeOn ? startMetronome() : stopMetronome();
-    });
+      if (session.mode === 'preview') {
+        this.writePreview(session, output, blockStart, blockEnd);
+        if (session.previewStopFrame !== null && blockEnd >= session.previewStopFrame) {
+          this.sessions.delete(session.id);
+          this.port.postMessage({
+            type: 'preview-ended',
+            id: session.id,
+            trackIndex: session.trackIndex
+          });
+        }
+        continue;
+      }
 
-    function startMetronome() {
-      playClick();
-      metronomeInterval = setInterval(playClick, (60 / currentBpm) * 1000);
+      if (blockEnd <= session.startFrame) continue;
+
+      if (session.mode === 'continuous') {
+        const captureStart = Math.max(blockStart, session.startFrame);
+        if (captureStart < blockEnd) {
+          this.writeContinuous(session, input, blockStart, captureStart, blockEnd);
+        }
+        continue;
+      }
+
+      const effectiveStop = session.stopFrame ?? blockEnd;
+      const captureStart = Math.max(blockStart, session.startFrame);
+      const captureEnd = Math.min(blockEnd, effectiveStop);
+
+      if (captureStart < captureEnd) {
+        const sourceOffset = captureStart - blockStart;
+        const count = captureEnd - captureStart;
+        if (session.mode === 'free') {
+          this.writeFree(session, input, sourceOffset, count);
+        } else {
+          this.writeFixed(session, input, blockStart, captureStart, captureEnd);
+        }
+      }
+
+      if (session.stopFrame !== null && blockEnd >= session.stopFrame) {
+        if (session.mode === 'free') {
+          this.beginFreePreview(session);
+          this.writePreview(session, output, blockStart, blockEnd);
+        } else {
+          this.finishFixed(session);
+        }
+      }
     }
-    function stopMetronome() { clearInterval(metronomeInterval); }
-    function restartMetronome() { stopMetronome(); startMetronome(); }
+    return true;
+  }
+}
+registerProcessor('pcm-capture-processor', PcmCaptureProcessor);
+`;
 
-    function playClick() {
-      if (!audioContext) return;
-      const osc = audioContext.createOscillator();
-      const gain = audioContext.createGain();
-      osc.frequency.setValueAtTime(1000, audioContext.currentTime);
-      gain.gain.setValueAtTime(0.15, audioContext.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.03);
-      osc.connect(gain);
-      gain.connect(masterBusNode);
-      osc.start();
-      osc.stop(audioContext.currentTime + 0.03);
+  return URL.createObjectURL(new Blob([source], { type: 'application/javascript' }));
+}
+
+async function setupPcmCaptureWorklet() {
+  if (!audioContext.audioWorklet || typeof AudioWorkletNode === 'undefined') {
+    throw new Error('AudioWorklet wird von diesem Browser nicht unterstützt.');
+  }
+
+  pcmWorkletModuleUrl = createPcmWorkletModuleUrl();
+  await audioContext.audioWorklet.addModule(pcmWorkletModuleUrl);
+
+  pcmCaptureNode = new AudioWorkletNode(audioContext, 'pcm-capture-processor', {
+    numberOfInputs: 1,
+    numberOfOutputs: TRACK_COUNT,
+    outputChannelCount: Array(TRACK_COUNT).fill(1),
+    channelCount: 1,
+    channelCountMode: 'explicit'
+  });
+  pcmCaptureNode.port.addEventListener('message', handlePcmCaptureMessage);
+  pcmCaptureNode.port.start?.();
+
+  tracks.forEach((track, index) => {
+    pcmCaptureNode.connect(track.inputNode, index, 0);
+  });
+}
+
+async function calibrateWorkletClock() {
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      pcmCaptureNode.port.removeEventListener('message', handler);
+      reject(new Error('Worklet-Kalibrierung: Timeout'));
+    }, 2000);
+
+    const handler = event => {
+      const msg = event.data;
+      if (msg?.type !== 'clock-probe') return;
+      clearTimeout(timeout);
+      pcmCaptureNode.port.removeEventListener('message', handler);
+
+      const t = audioContext.currentTime;
+      const mainFrame = Math.round(t * audioContext.sampleRate);
+      workletFrameOffset = msg.frame - mainFrame;
+
+      console.log(
+        '[V1.9] Worklet-Clock kalibriert. Offset:',
+        workletFrameOffset, 'Frames (',
+        (workletFrameOffset / audioContext.sampleRate * 1000).toFixed(1), 'ms )'
+      );
+      resolve();
+    };
+
+    pcmCaptureNode.port.addEventListener('message', handler);
+    pcmCaptureNode.port.postMessage({ type: 'clock-probe' });
+  });
+}
+
+function createTrackGraph(track, index) {
+  track.inputNode = audioContext.createGain();
+  track.dryGainNode = audioContext.createGain();
+  track.wetGainNode = audioContext.createGain();
+
+  track.bassNode = audioContext.createBiquadFilter();
+  track.bassNode.type = 'lowshelf';
+  track.bassNode.frequency.value = 250;
+
+  track.trebleNode = audioContext.createBiquadFilter();
+  track.trebleNode.type = 'highshelf';
+  track.trebleNode.frequency.value = 4000;
+
+  track.pannerNode = typeof audioContext.createStereoPanner === 'function'
+    ? audioContext.createStereoPanner()
+    : audioContext.createGain();
+
+  track.channelGainNode = audioContext.createGain();
+  track.channelGainNode.gain.value = track.volume;
+
+  track.analyserNode = audioContext.createAnalyser();
+  track.analyserNode.fftSize = 256;
+  track.analyserNode.smoothingTimeConstant = 0.7;
+  track.meterData = new Uint8Array(track.analyserNode.fftSize);
+
+  track.inputNode.connect(track.dryGainNode);
+  track.dryGainNode.connect(track.bassNode);
+  track.wetGainNode.connect(track.bassNode);
+
+  track.bassNode
+    .connect(track.trebleNode)
+    .connect(track.pannerNode)
+    .connect(track.channelGainNode)
+    .connect(track.analyserNode)
+    .connect(masterBusNode);
+
+  // Chorus
+  track.chorusSendNode = audioContext.createGain();
+  track.chorusSendNode.gain.value = 0;
+  track.chorusDelayNode = audioContext.createDelay(0.05);
+  track.chorusDelayNode.delayTime.value = 0.025;
+  track.chorusLfoNode = audioContext.createOscillator();
+  track.chorusLfoNode.frequency.value = 1.5;
+  track.chorusLfoGainNode = audioContext.createGain();
+  track.chorusLfoGainNode.gain.value = 0.003;
+  track.chorusLfoNode.connect(track.chorusLfoGainNode);
+  track.chorusLfoGainNode.connect(track.chorusDelayNode.delayTime);
+  track.inputNode.connect(track.chorusSendNode);
+  track.chorusSendNode.connect(track.chorusDelayNode);
+  track.chorusDelayNode.connect(track.wetGainNode);
+  track.chorusLfoNode.start();
+
+  // Echo
+  track.echoSendNode = audioContext.createGain();
+  track.echoSendNode.gain.value = 0;
+  track.echoDelayNode = audioContext.createDelay(2.0);
+  track.echoFeedbackNode = audioContext.createGain();
+  track.echoFeedbackNode.gain.value = 0.38;
+  track.echoDelayNode.connect(track.echoFeedbackNode);
+  track.echoFeedbackNode.connect(track.echoDelayNode);
+  track.inputNode.connect(track.echoSendNode);
+  track.echoSendNode.connect(track.echoDelayNode);
+  track.echoDelayNode.connect(track.wetGainNode);
+
+  // Reverb
+  track.reverbSendNode = audioContext.createGain();
+  track.reverbSendNode.gain.value = 0;
+  track.reverbNode = audioContext.createConvolver();
+  track.reverbNode.buffer = sharedReverbBuffer;
+  track.inputNode.connect(track.reverbSendNode);
+  track.reverbSendNode.connect(track.reverbNode);
+  track.reverbNode.connect(track.wetGainNode);
+
+  // Octaver
+  track.octaveGainNode = audioContext.createGain();
+  track.octaveGainNode.gain.value = 0;
+  track.octaveGainNode.connect(track.wetGainNode);
+
+  updateEchoDelay(index);
+  updateFxRouting(index);
+}
+
+async function setupInputStream() {
+  const selectedMicId = micSelect.value;
+  const baseAudioConstraints = {
+    echoCancellation: false,
+    noiseSuppression: false,
+    autoGainControl: false,
+    channelCount: 1
+  };
+
+  const constraints = {
+    audio: selectedMicId
+      ? { ...baseAudioConstraints, deviceId: { exact: selectedMicId } }
+      : baseAudioConstraints
+  };
+
+  let nextStream;
+  try {
+    nextStream = await navigator.mediaDevices.getUserMedia(constraints);
+  } catch (error) {
+    if (!selectedMicId) throw error;
+    nextStream = await navigator.mediaDevices.getUserMedia({ audio: baseAudioConstraints });
+  }
+
+  const nextSource = audioContext.createMediaStreamSource(nextStream);
+  nextSource.connect(inputPreampNode);
+
+  if (micSourceNode) {
+    try { micSourceNode.disconnect(); } catch (_) {}
+  }
+  if (rawMicStream) {
+    rawMicStream.getTracks().forEach(track => track.stop());
+  }
+
+  micSourceNode = nextSource;
+  rawMicStream = nextStream;
+
+  const settings = rawMicStream.getAudioTracks()[0]?.getSettings?.() || {};
+  const rateText = settings.sampleRate ? ` • ${settings.sampleRate} Hz` : '';
+  setInfo(`Audio-Engine bereit${rateText}`, '#34c759');
+}
+
+async function initializeAudio() {
+  if (audioInitialized) {
+    if (audioContext.state === 'suspended') await audioContext.resume();
+    setInfo('Audio-Engine bereit', '#34c759');
+    return;
+  }
+
+  if (!navigator.mediaDevices?.getUserMedia) {
+    throw new Error('Mikrofonzugriff ist nicht verfügbar. Die Seite muss über HTTPS oder localhost laufen.');
+  }
+
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContextClass) throw new Error('Web Audio API wird nicht unterstützt.');
+
+  audioContext = new AudioContextClass({ latencyHint: 'interactive' });
+  if (audioContext.state === 'suspended') await audioContext.resume();
+
+  masterBusNode = audioContext.createGain();
+  masterBusNode.gain.value = Number(masterOutputGainInput.value);
+
+  masterLimiterNode = audioContext.createDynamicsCompressor();
+  masterLimiterNode.threshold.value = -3;
+  masterLimiterNode.knee.value = 6;
+  masterLimiterNode.ratio.value = 12;
+  masterLimiterNode.attack.value = 0.003;
+  masterLimiterNode.release.value = 0.18;
+
+  mixDestinationNode = audioContext.createMediaStreamDestination();
+  monitorBusNode = audioContext.createGain();
+  monitorBusNode.gain.value = 1;
+
+  masterBusNode.connect(masterLimiterNode);
+  masterLimiterNode.connect(audioContext.destination);
+  masterLimiterNode.connect(mixDestinationNode);
+  monitorBusNode.connect(audioContext.destination);
+
+  inputPreampNode = audioContext.createGain();
+  inputPreampNode.gain.value = Number(preampGainInput.value);
+
+  inputLimiterNode = audioContext.createDynamicsCompressor();
+  inputLimiterNode.threshold.value = -6;
+  inputLimiterNode.knee.value = 8;
+  inputLimiterNode.ratio.value = 10;
+  inputLimiterNode.attack.value = 0.003;
+  inputLimiterNode.release.value = 0.12;
+
+  inputPreampNode.connect(inputLimiterNode);
+
+  sharedReverbBuffer = createReverbImpulse(audioContext);
+  tracks.forEach(createTrackGraph);
+
+  await setupPcmCaptureWorklet();
+
+  try {
+    await calibrateWorkletClock();
+  } catch (err) {
+    console.warn('[V1.9] Worklet-Kalibrierung fehlgeschlagen, Offset bleibt 0:', err);
+    workletFrameOffset = 0;
+  }
+
+  const inputLatency = audioContext.baseLatency || 0;
+  const outputLatency = audioContext.outputLatency || 0;
+  const totalLatency = inputLatency + outputLatency * 0.5;
+  latencyCompensationFrames = Math.round(totalLatency * audioContext.sampleRate);
+  console.log(
+    '[V1.9] Latenz-Kompensation:',
+    latencyCompensationFrames, 'Frames (',
+    (latencyCompensationFrames / audioContext.sampleRate * 1000).toFixed(1), 'ms )',
+    '| base:', (inputLatency * 1000).toFixed(1), 'ms',
+    '| output:', (outputLatency * 1000).toFixed(1), 'ms'
+  );
+
+  inputLimiterNode.connect(pcmCaptureNode);
+
+  await setupInputStream();
+  await getDevices();
+  await getOutputDevices();
+
+  navigator.mediaDevices.addEventListener?.('devicechange', async () => {
+    await getDevices(micSelect.value);
+    await getOutputDevices(selectedOutputDeviceId);
+  });
+
+  if (typeof MediaRecorder === 'undefined') {
+    recordMixBtn.disabled = true;
+    recordMixBtn.title = 'Mix-Export wird von diesem Browser nicht unterstützt.';
+  }
+
+  audioInitialized = true;
+  initAudioBtn.textContent = '✓ Engine aktiv';
+  initAudioBtn.classList.add('mic-on');
+  setInfo(`AudioWorklet bereit • ${audioContext.sampleRate} Hz`, '#34c759');
+  refreshTransportControls();
+  startVisualLoop();
+}
+
+initAudioBtn.addEventListener('click', async () => {
+  initAudioBtn.disabled = true;
+  try {
+    await initializeAudio();
+  } catch (error) {
+    console.error('Audio init error:', error);
+    setInfo(error.message || 'Audio-Initialisierung fehlgeschlagen', '#ff3b30');
+    alert(error.message || 'Audio-Initialisierung fehlgeschlagen.');
+  } finally {
+    initAudioBtn.disabled = false;
+  }
+});
+
+micSelect.addEventListener('change', async () => {
+  if (!audioInitialized) return;
+  micSelect.disabled = true;
+  try {
+    await setupInputStream();
+    await getDevices(micSelect.value);
+  } catch (error) {
+    console.error('Input switch error:', error);
+    setInfo('Eingang konnte nicht gewechselt werden', '#ff3b30');
+  } finally {
+    micSelect.disabled = false;
+  }
+});
+
+outputSelect.addEventListener('change', async () => {
+  if (!audioInitialized || !outputRoutingSupported) return;
+  const deviceId = outputSelect.value;
+  try {
+    await audioContext.setSinkId(deviceId || '');
+    selectedOutputDeviceId = deviceId;
+    const label = deviceId
+      ? outputSelect.options[outputSelect.selectedIndex].textContent
+      : 'Systemstandard';
+    setInfo(`Ausgabe: ${label}`, '#34c759');
+  } catch (error) {
+    console.error('setSinkId error:', error);
+    setInfo('Ausgabe konnte nicht gewechselt werden', '#ff3b30');
+  }
+});
+
+preampGainInput.addEventListener('input', event => {
+  const value = Number(event.target.value);
+  preampVal.textContent = `${Math.round(value * 100)}%`;
+  setAudioParam(inputPreampNode?.gain, value);
+});
+
+masterOutputGainInput.addEventListener('input', event => {
+  const value = Number(event.target.value);
+  masterOutputVal.textContent = `${Math.round(value * 100)}%`;
+  setAudioParam(masterBusNode?.gain, value, 0.025);
+});
+
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && audioContext?.state === 'suspended') {
+    audioContext.resume().then(() => {
+      setInfo('Audio-Engine wieder aktiv', '#34c759');
+    }).catch(() => {});
+  }
+});
+
+/* ============================================================
+   Octave-Worker mit Auto-Correlation-Modus
+   ============================================================ */
+function createOctaveWorker() {
+  if (octaveWorker) return octaveWorker;
+
+  const workerSource = `
+'use strict';
+
+function wrapIndex(value, length) {
+  value %= length;
+  return value < 0 ? value + length : value;
+}
+
+function fft(real, imag, inverse) {
+  const n = real.length;
+  let j = 0;
+  for (let i = 1; i < n; i++) {
+    let bit = n >> 1;
+    while (j & bit) {
+      j ^= bit;
+      bit >>= 1;
+    }
+    j ^= bit;
+    if (i < j) {
+      const tr = real[i]; real[i] = real[j]; real[j] = tr;
+      const ti = imag[i]; imag[i] = imag[j]; imag[j] = ti;
+    }
+  }
+
+  for (let size = 2; size <= n; size <<= 1) {
+    const angle = (inverse ? 2 : -2) * Math.PI / size;
+    const wLenR = Math.cos(angle);
+    const wLenI = Math.sin(angle);
+    const half = size >> 1;
+
+    for (let offset = 0; offset < n; offset += size) {
+      let wr = 1;
+      let wi = 0;
+      for (let k = 0; k < half; k++) {
+        const even = offset + k;
+        const odd = even + half;
+        const vr = real[odd] * wr - imag[odd] * wi;
+        const vi = real[odd] * wi + imag[odd] * wr;
+        const ur = real[even];
+        const ui = imag[even];
+
+        real[even] = ur + vr;
+        imag[even] = ui + vi;
+        real[odd] = ur - vr;
+        imag[odd] = ui - vi;
+
+        const nextWr = wr * wLenR - wi * wLenI;
+        wi = wr * wLenI + wi * wLenR;
+        wr = nextWr;
+      }
+    }
+  }
+
+  if (inverse) {
+    for (let i = 0; i < n; i++) {
+      real[i] /= n;
+      imag[i] /= n;
+    }
+  }
+}
+
+function readCircularFrame(input, center, window, real, imag) {
+  const length = input.length;
+  const half = window.length >> 1;
+  for (let i = 0; i < window.length; i++) {
+    const sourceIndex = wrapIndex(center + i - half, length);
+    real[i] = input[sourceIndex] * window[i];
+    imag[i] = 0;
+  }
+  fft(real, imag, false);
+}
+
+function wrapPhase(value) {
+  return value - 2 * Math.PI * Math.round(value / (2 * Math.PI));
+}
+
+function renderOctaveDown(input, sampleRate, jobId) {
+  const length = input.length;
+  if (length < 256) return input.slice();
+
+  const fftSize = length > sampleRate * 35 ? 1024 : 2048;
+  const hop = fftSize >> 2;
+  const bins = (fftSize >> 1) + 1;
+  const compressedLength = Math.max(128, Math.ceil(length / 2));
+  const outputFrameCount = Math.ceil((compressedLength + fftSize) / hop);
+
+  const window = new Float64Array(fftSize);
+  for (let i = 0; i < fftSize; i++) {
+    window[i] = 0.5 - 0.5 * Math.cos((2 * Math.PI * i) / fftSize);
+  }
+
+  const aReal = new Float64Array(fftSize);
+  const aImag = new Float64Array(fftSize);
+  const bReal = new Float64Array(fftSize);
+  const bImag = new Float64Array(fftSize);
+  const outReal = new Float64Array(fftSize);
+  const outImag = new Float64Array(fftSize);
+  const phaseAccumulator = new Float64Array(bins);
+  const phaseAdvance = new Float64Array(bins);
+  const compressed = new Float64Array(compressedLength);
+  const normalization = new Float64Array(compressedLength);
+
+  readCircularFrame(input, 0, window, aReal, aImag);
+  for (let bin = 0; bin < bins; bin++) {
+    phaseAccumulator[bin] = Math.atan2(aImag[bin], aReal[bin]);
+    phaseAdvance[bin] = 2 * Math.PI * hop * bin / fftSize;
+  }
+
+  for (let frame = 0; frame < outputFrameCount; frame++) {
+    const analysisCenter = wrapIndex(frame * hop * 2, length);
+    const nextAnalysisCenter = wrapIndex(analysisCenter + hop, length);
+    readCircularFrame(input, analysisCenter, window, aReal, aImag);
+    readCircularFrame(input, nextAnalysisCenter, window, bReal, bImag);
+
+    outReal.fill(0);
+    outImag.fill(0);
+
+    for (let bin = 0; bin < bins; bin++) {
+      const magnitude = Math.hypot(aReal[bin], aImag[bin]);
+      const phaseA = Math.atan2(aImag[bin], aReal[bin]);
+      const phaseB = Math.atan2(bImag[bin], bReal[bin]);
+      const phaseDelta = wrapPhase(phaseB - phaseA - phaseAdvance[bin]);
+      const phase = phaseAccumulator[bin];
+
+      outReal[bin] = magnitude * Math.cos(phase);
+      outImag[bin] = magnitude * Math.sin(phase);
+      phaseAccumulator[bin] += phaseAdvance[bin] + phaseDelta;
     }
 
-    recordMixBtn.addEventListener('click', () => {
-      if (!audioContext || !mixDestinationNode) return alert('Bitte zuerst Engine entriegeln!');
+    for (let bin = 1; bin < bins - 1; bin++) {
+      outReal[fftSize - bin] = outReal[bin];
+      outImag[fftSize - bin] = -outImag[bin];
+    }
 
-      if (!isRecordingMix) {
-        mixChunks = [];
-        let options = {};
-        if (MediaRecorder.isTypeSupported('audio/mp4')) options = { mimeType: 'audio/mp4' };
+    fft(outReal, outImag, true);
 
-        mixRecorder = new MediaRecorder(mixDestinationNode.stream, options);
-        mixRecorder.ondataavailable = e => mixChunks.push(e.data);
-        mixRecorder.onstop = () => {
-          const blob = new Blob(mixChunks, { type: mixRecorder.mimeType || 'audio/mp4' });
-          const a = document.createElement('a');
-          a.href = URL.createObjectURL(blob);
-          a.download = `loop-mix-${Date.now()}.mp4`;
-          a.click();
-        };
+    const outputCenter = frame * hop;
+    const half = fftSize >> 1;
+    for (let i = 0; i < fftSize; i++) {
+      const destination = wrapIndex(outputCenter + i - half, compressedLength);
+      const weighted = outReal[i] * window[i];
+      compressed[destination] += weighted;
+      normalization[destination] += window[i] * window[i];
+    }
 
-        mixRecorder.start();
-        isRecordingMix = true;
-        recordMixBtn.textContent = '⏹️ Stopp & Export';
-        recordMixBtn.style.background = '#ff3b30';
+    if ((frame & 15) === 0) {
+      self.postMessage({
+        type: 'progress',
+        jobId,
+        progress: Math.min(0.92, frame / Math.max(1, outputFrameCount))
+      });
+    }
+  }
+
+  for (let i = 0; i < compressedLength; i++) {
+    compressed[i] /= Math.max(1e-8, normalization[i]);
+  }
+
+  const output = new Float32Array(length);
+  const ratio = compressedLength / length;
+  let inputPeak = 0;
+  let outputPeak = 0;
+  let inputSumSquares = 0;
+  let outputSumSquares = 0;
+
+  for (let i = 0; i < length; i++) {
+    const position = i * ratio;
+    const base = Math.floor(position);
+    const fraction = position - base;
+    const next = (base + 1) % compressedLength;
+    const sample = compressed[base % compressedLength] * (1 - fraction)
+      + compressed[next] * fraction;
+    const inputSample = input[i] || 0;
+
+    output[i] = sample;
+    inputPeak = Math.max(inputPeak, Math.abs(inputSample));
+    outputPeak = Math.max(outputPeak, Math.abs(sample));
+    inputSumSquares += inputSample * inputSample;
+    outputSumSquares += sample * sample;
+  }
+
+  const inputRms = Math.sqrt(inputSumSquares / Math.max(1, length));
+  const outputRms = Math.sqrt(outputSumSquares / Math.max(1, length));
+  let gain = 1;
+
+  if (inputRms >= 0.003 && inputPeak >= 0.01 && outputRms > 1e-8 && outputPeak > 1e-8) {
+    const targetRms = Math.min(0.24, inputRms * 1.2);
+    const rmsGain = targetRms / outputRms;
+    const peakGain = 0.95 / outputPeak;
+    gain = Math.max(0.25, Math.min(4, rmsGain, peakGain));
+  }
+
+  if (Math.abs(gain - 1) > 1e-6) {
+    for (let i = 0; i < output.length; i++) output[i] *= gain;
+  }
+
+  return output;
+}
+
+function crossCorrelate(reference, test, maxLagSamples) {
+  const length = Math.min(reference.length, test.length);
+  let n = 1;
+  while (n < length * 2) n <<= 1;
+
+  const refR = new Float64Array(n);
+  const refI = new Float64Array(n);
+  const tstR = new Float64Array(n);
+  const tstI = new Float64Array(n);
+
+  let refMean = 0, tstMean = 0;
+  for (let i = 0; i < length; i++) { refMean += reference[i]; tstMean += test[i]; }
+  refMean /= length; tstMean /= length;
+
+  for (let i = 0; i < length; i++) {
+    refR[i] = reference[i] - refMean;
+    tstR[i] = test[i] - tstMean;
+  }
+
+  fft(refR, refI, false);
+  fft(tstR, tstI, false);
+
+  const cr = new Float64Array(n);
+  const ci = new Float64Array(n);
+  for (let i = 0; i < n; i++) {
+    const rr = refR[i], ri = refI[i];
+    const tr = tstR[i], ti = tstI[i];
+    cr[i] = rr * tr + ri * ti;
+    ci[i] = rr * ti - ri * tr;
+  }
+
+  fft(cr, ci, true);
+
+  let bestLag = 0;
+  let bestValue = -Infinity;
+  let sumAbs = 0;
+  let count = 0;
+
+  for (let lag = -maxLagSamples; lag <= maxLagSamples; lag++) {
+    const index = lag < 0 ? n + lag : lag;
+    const value = cr[index];
+    sumAbs += Math.abs(value);
+    count++;
+    if (value > bestValue) {
+      bestValue = value;
+      bestLag = lag;
+    }
+  }
+
+  const avgAbs = sumAbs / Math.max(1, count);
+  const confidence = avgAbs > 1e-12 ? Math.abs(bestValue) / avgAbs : 0;
+
+  return { lag: bestLag, confidence, peakValue: bestValue };
+}
+
+self.onmessage = event => {
+  const message = event.data || {};
+
+  if (message.type === 'render') {
+    try {
+      const input = new Float32Array(message.samples);
+      const output = renderOctaveDown(input, message.sampleRate, message.jobId);
+      self.postMessage({ type: 'complete', jobId: message.jobId, samples: output }, [output.buffer]);
+    } catch (error) {
+      self.postMessage({
+        type: 'error',
+        jobId: message.jobId,
+        message: error?.message || String(error)
+      });
+    }
+    return;
+  }
+
+  if (message.type === 'autocorr') {
+    try {
+      const reference = new Float32Array(message.reference);
+      const test = new Float32Array(message.test);
+      const maxLag = Math.max(1, Math.min(
+        message.maxLagSamples || 2000,
+        Math.floor(reference.length / 4)
+      ));
+      const result = crossCorrelate(reference, test, maxLag);
+      self.postMessage({
+        type: 'autocorr-complete',
+        jobId: message.jobId,
+        trackIndex: message.trackIndex,
+        lag: result.lag,
+        confidence: result.confidence,
+        peakValue: result.peakValue
+      });
+    } catch (error) {
+      self.postMessage({
+        type: 'autocorr-error',
+        jobId: message.jobId,
+        trackIndex: message.trackIndex,
+        message: error?.message || String(error)
+      });
+    }
+    return;
+  }
+};
+`;
+
+  octaveWorkerUrl = URL.createObjectURL(new Blob([workerSource], { type: 'application/javascript' }));
+  octaveWorker = new Worker(octaveWorkerUrl);
+  octaveWorker.addEventListener('message', handleOctaveWorkerMessage);
+  octaveWorker.addEventListener('error', event => {
+    console.error('Octave worker error:', event);
+  });
+  return octaveWorker;
+}
+
+function recalculateOctaveJobState(index) {
+  const track = tracks[index];
+  const jobs = [...octaveJobs.values()].filter(job =>
+    job.index === index && job.generation === track.octaveGeneration
+  );
+  track.octaveRenderCount = jobs.length;
+  track.octaveProgress = jobs.length
+    ? jobs.reduce((sum, job) => sum + (job.progress || 0), 0) / jobs.length
+    : 1;
+}
+
+function refreshOctaveButton(index) {
+  const track = tracks[index];
+  const button = document.getElementById(`fx-octave-${index}`);
+  if (!button) return;
+
+  button.classList.toggle('fx-active', track.fxOctaverActive);
+  if (track.octaveRenderCount > 0) {
+    button.textContent = `⏳ Oct ${Math.round(track.octaveProgress * 100)}%`;
+    button.title = 'Die -12-Halbtöne-Spur wird im Hintergrund berechnet.';
+  } else {
+    button.textContent = '⬇️ Octave -1';
+    button.title = 'Berechnet jede Loop-Ebene nach der Aufnahme eine Oktave tiefer.';
+  }
+}
+
+function stopOctaveLayerNode(layer) {
+  if (!layer?.octaveSourceNode) return;
+  try { layer.octaveSourceNode.stop(); } catch (_) {}
+  try { layer.octaveSourceNode.disconnect(); } catch (_) {}
+  layer.octaveSourceNode = null;
+}
+
+function playOctaveLayer(index, layer, requestedStartTime = null, requestedOffset = null) {
+  const track = tracks[index];
+  if (!track.fxOctaverActive || !layer.octaveBuffer || !track.octaveGainNode) return;
+
+  stopOctaveLayerNode(layer);
+  const source = audioContext.createBufferSource();
+  source.buffer = layer.octaveBuffer;
+  source.loop = true;
+  source.loopStart = 0;
+  source.loopEnd = layer.octaveBuffer.duration;
+  source.connect(track.octaveGainNode);
+
+  const startTime = requestedStartTime ?? (audioContext.currentTime + 0.03);
+  let offset = requestedOffset;
+  if (offset === null || offset === undefined) {
+    offset = masterStartTime !== null && masterLoopDuration
+      ? positiveModulo(startTime - masterStartTime, masterLoopDuration)
+      : 0;
+  }
+  if (offset >= layer.octaveBuffer.duration - (1 / layer.octaveBuffer.sampleRate)) offset = 0;
+
+  source.start(startTime, offset);
+  layer.octaveSourceNode = source;
+}
+
+function ensureOctaveLayer(index, layer) {
+  const track = tracks[index];
+  if (!layer || layer.disposed || layer.octaveBuffer || layer.octaveJobId) return;
+
+  const worker = createOctaveWorker();
+  const jobId = `oct-${++octaveJobSequence}`;
+  const generation = track.octaveGeneration;
+  const input = new Float32Array(layer.buffer.getChannelData(0));
+
+  layer.octaveJobId = jobId;
+  octaveJobs.set(jobId, { index, layer, generation, progress: 0 });
+  recalculateOctaveJobState(index);
+  refreshOctaveButton(index);
+
+  worker.postMessage({
+    type: 'render',
+    jobId,
+    sampleRate: layer.buffer.sampleRate,
+    samples: input.buffer
+  }, [input.buffer]);
+}
+
+function ensureTrackOctaveLayers(index) {
+  const track = tracks[index];
+  for (const layer of track.layers) ensureOctaveLayer(index, layer);
+}
+
+function handleOctaveWorkerMessage(event) {
+  const message = event.data || {};
+
+  if (message.type === 'autocorr-complete') {
+    handleAutoCorrComplete(message);
+    return;
+  }
+  if (message.type === 'autocorr-error') {
+    console.warn('Auto-Correlation fehlgeschlagen:', message.message);
+    return;
+  }
+
+  const job = octaveJobs.get(message.jobId);
+  if (!job) return;
+
+  const { index, layer, generation } = job;
+  const track = tracks[index];
+
+  if (message.type === 'progress') {
+    job.progress = Number(message.progress) || 0;
+    if (generation === track.octaveGeneration) {
+      recalculateOctaveJobState(index);
+      refreshOctaveButton(index);
+    }
+    return;
+  }
+
+  octaveJobs.delete(message.jobId);
+  layer.octaveJobId = null;
+  recalculateOctaveJobState(index);
+
+  if (message.type === 'complete' && generation === track.octaveGeneration && !layer.disposed) {
+    layer.octaveBuffer = samplesToAudioBuffer(new Float32Array(message.samples));
+    if (track.fxOctaverActive && layer.sourceNode) playOctaveLayer(index, layer);
+    setInfo(`CH ${index + 1}: Octave -1 berechnet`, '#bf5af2');
+  } else if (message.type === 'error') {
+    console.error('Octave render failed:', message.message);
+    setInfo(`CH ${index + 1}: Octave-Berechnung fehlgeschlagen`, '#ff3b30');
+  }
+
+  updateFxRouting(index);
+  refreshOctaveButton(index);
+}
+
+/* ============================================================
+   Auto-Cross-Correlation
+   ============================================================ */
+
+function buildReferenceMix(index, excludeLayer) {
+  const track = tracks[index];
+  const otherLayers = track.layers.filter(l => l !== excludeLayer && !l.disposed);
+  if (otherLayers.length === 0 || !masterLoopFrames) return null;
+
+  const length = masterLoopFrames;
+  const mix = new Float32Array(length);
+  for (const layer of otherLayers) {
+    const data = layer.buffer.getChannelData(0);
+    const copyLength = Math.min(data.length, length);
+    for (let i = 0; i < copyLength; i++) mix[i] += data[i];
+  }
+  const inv = 1 / Math.max(1, Math.sqrt(otherLayers.length));
+  for (let i = 0; i < length; i++) mix[i] *= inv;
+  return mix;
+}
+
+function runAutoCorrelation(index, newLayer) {
+  const track = tracks[index];
+  if (!masterLoopFrames || !newLayer?.buffer) return;
+
+  const reference = buildReferenceMix(index, newLayer);
+  if (!reference) return;
+
+  const newData = newLayer.buffer.getChannelData(0);
+  const testLength = Math.min(newData.length, masterLoopFrames);
+  const test = new Float32Array(testLength);
+  test.set(newData.subarray(0, testLength));
+
+  const maxLagSamples = Math.min(
+    Math.round(audioContext.sampleRate * 0.05),
+    Math.floor(masterLoopFrames / 8)
+  );
+
+  const worker = createOctaveWorker();
+  const jobId = `ac-${++autoCorrJobSequence}`;
+  track.autoCorrInProgress = true;
+  autoCorrJobs.set(jobId, { index, generation: track.octaveGeneration });
+
+  const refCopy = reference.slice();
+  const testCopy = test.slice();
+  worker.postMessage({
+    type: 'autocorr',
+    jobId,
+    trackIndex: index,
+    reference: refCopy.buffer,
+    test: testCopy.buffer,
+    maxLagSamples
+  }, [refCopy.buffer, testCopy.buffer]);
+}
+
+function handleAutoCorrComplete(message) {
+  const job = autoCorrJobs.get(message.jobId);
+  if (!job) return;
+  autoCorrJobs.delete(message.jobId);
+
+  const index = Number(message.trackIndex);
+  const track = tracks[index];
+  if (!track) return;
+  track.autoCorrInProgress = false;
+
+  const lagSamples = Number(message.lag) || 0;
+  const confidence = Number(message.confidence) || 0;
+
+  if (confidence < 1.15) {
+    setInfo(`CH ${index + 1}: Auto-Sync unsicher (Konfidenz ${confidence.toFixed(2)})`, '#8e8e93');
+    return;
+  }
+
+  const lagSec = -lagSamples / audioContext.sampleRate;
+  const rounded = Math.round(lagSec * 1000) / 1000;
+  const clamped = Math.max(-NUDGE_LIMIT_SEC, Math.min(NUDGE_LIMIT_SEC, rounded));
+
+  track.suggestedOffset = clamped;
+
+  updateNudgeReadout(index, clamped, true);
+  const setBtn = document.getElementById(`nudge-set-${index}`);
+  if (setBtn) setBtn.classList.add('auto-suggest');
+
+  setInfo(
+    `CH ${index + 1}: Auto-Sync Vorschlag ${clamped >= 0 ? '+' : ''}${Math.round(clamped * 1000)} ms (Konfidenz ${confidence.toFixed(2)})`,
+    '#34c759'
+  );
+}
+
+/* ============================================================
+   Nudge-Logik
+   ============================================================ */
+
+function updateNudgeReadout(index, valueSec, isSuggestion = false) {
+  const readout = document.getElementById(`nudge-val-${index}`);
+  if (!readout) return;
+  const ms = Math.round(valueSec * 1000);
+  readout.textContent = ms === 0 ? '0 ms' : `${ms > 0 ? '+' : ''}${ms} ms`;
+  if (isSuggestion) {
+    readout.style.color = '#34c759';
+  } else {
+    readout.style.color = ms === 0 ? '#8e8e93' : '#ff9500';
+  }
+}
+
+function nudgeLatestLayer(index, direction) {
+  const track = tracks[index];
+  if (!audioContext || track.layers.length === 0) return;
+
+  const stepSec = (track.nudgeStepMs / 1000) * direction;
+  const newOffset = track.nudgeOffset + stepSec;
+  const clamped = Math.max(-NUDGE_LIMIT_SEC, Math.min(NUDGE_LIMIT_SEC, newOffset));
+  applyNudge(index, clamped);
+}
+
+function setNudge(index, value) {
+  const clamped = Math.max(-NUDGE_LIMIT_SEC, Math.min(NUDGE_LIMIT_SEC, value));
+  applyNudge(index, clamped);
+}
+
+function applyNudge(index, offsetSec) {
+  const track = tracks[index];
+  track.nudgeOffset = offsetSec;
+  track.suggestedOffset = null;
+
+  updateNudgeReadout(index, offsetSec, false);
+  const setBtn = document.getElementById(`nudge-set-${index}`);
+  if (setBtn) setBtn.classList.remove('auto-suggest');
+
+  const latestLayer = track.layers[track.layers.length - 1];
+  if (!latestLayer?.sourceNode) return;
+
+  const now = audioContext.currentTime;
+  const when = Math.max(
+    now + 0.02,
+    masterStartTime !== null && masterLoopDuration
+      ? nextBoundary(masterStartTime, masterLoopDuration, now + 0.02)
+      : now + 0.02
+  );
+
+  const layerDuration = latestLayer.buffer.duration;
+  let baseOffset = 0;
+  if (masterStartTime !== null && masterLoopDuration) {
+    baseOffset = positiveModulo(when - masterStartTime, masterLoopDuration);
+  }
+  let offset = positiveModulo(baseOffset + offsetSec, layerDuration);
+  if (offset >= layerDuration - (1 / latestLayer.buffer.sampleRate)) offset = 0;
+
+  stopLayerNode(latestLayer);
+  const source = audioContext.createBufferSource();
+  source.buffer = latestLayer.buffer;
+  source.loop = true;
+  source.loopStart = 0;
+  source.loopEnd = layerDuration;
+  source.connect(track.inputNode);
+  source.start(when, offset);
+  latestLayer.sourceNode = source;
+
+  if (track.fxOctaverActive && latestLayer.octaveBuffer) {
+    stopOctaveLayerNode(latestLayer);
+    const octSource = audioContext.createBufferSource();
+    octSource.buffer = latestLayer.octaveBuffer;
+    octSource.loop = true;
+    octSource.loopStart = 0;
+    octSource.loopEnd = latestLayer.octaveBuffer.duration;
+    octSource.connect(track.octaveGainNode);
+    let octOffset = positiveModulo(baseOffset + offsetSec, latestLayer.octaveBuffer.duration);
+    if (octOffset >= latestLayer.octaveBuffer.duration - (1 / latestLayer.octaveBuffer.sampleRate)) octOffset = 0;
+    octSource.start(when, octOffset);
+    latestLayer.octaveSourceNode = octSource;
+  }
+}
+
+function confirmNudge(index) {
+  const track = tracks[index];
+
+  if (track.suggestedOffset !== null && Math.abs(track.suggestedOffset - track.nudgeOffset) > 1e-9) {
+    applyNudge(index, track.suggestedOffset);
+  }
+
+  track.channelBaseOffset = track.nudgeOffset;
+  track.suggestedOffset = null;
+
+  const btn = document.getElementById(`nudge-set-${index}`);
+  if (btn) {
+    btn.classList.remove('auto-suggest');
+    const ms = Math.round(track.channelBaseOffset * 1000);
+    btn.textContent = ms === 0 ? '✓ Basis 0' : `✓ Basis ${ms > 0 ? '+' : ''}${ms}ms`;
+    btn.classList.add('active-toggle');
+    setTimeout(() => {
+      btn.classList.remove('active-toggle');
+      btn.textContent = '✓ Set';
+    }, 900);
+  }
+
+  setInfo(
+    `CH ${index + 1}: Basis-Offset ${Math.round(track.channelBaseOffset * 1000)} ms übernommen`,
+    '#34c759'
+  );
+}
+
+function resetNudgeUI(index) {
+  const track = tracks[index];
+  track.nudgeOffset = 0;
+  track.channelBaseOffset = 0;
+  track.suggestedOffset = null;
+  updateNudgeReadout(index, 0, false);
+  const setBtn = document.getElementById(`nudge-set-${index}`);
+  if (setBtn) {
+    setBtn.classList.remove('auto-suggest');
+    setBtn.textContent = '✓ Set';
+  }
+}
+
+function updateFxRouting(index) {
+  const track = tracks[index];
+  if (!audioContext || !track.inputNode) return;
+
+  const octaveAudible = track.fxOctaverActive && track.layers.some(layer => layer.octaveBuffer);
+  const activeCount = [
+    octaveAudible,
+    track.fxChorusActive,
+    track.fxEchoActive,
+    track.fxReverbActive
+  ].filter(Boolean).length;
+
+  if (activeCount === 0) {
+    setAudioParam(track.dryGainNode.gain, 1);
+    setAudioParam(track.chorusSendNode.gain, 0);
+    setAudioParam(track.echoSendNode.gain, 0);
+    setAudioParam(track.reverbSendNode.gain, 0);
+    track.octaveOutputTarget = 0;
+    setAudioParam(track.octaveGainNode.gain, 0);
+    return;
+  }
+
+  const mix = Math.min(1, Math.max(0, track.fxMixVal));
+  const dryLevel = Math.cos(mix * Math.PI * 0.5);
+  const wetLevel = Math.sin(mix * Math.PI * 0.5) / Math.sqrt(activeCount);
+
+  setAudioParam(track.dryGainNode.gain, dryLevel);
+  setAudioParam(track.chorusSendNode.gain, track.fxChorusActive ? wetLevel : 0);
+  setAudioParam(track.echoSendNode.gain, track.fxEchoActive ? wetLevel : 0);
+  setAudioParam(track.reverbSendNode.gain, track.fxReverbActive ? wetLevel : 0);
+
+  track.octaveOutputTarget = octaveAudible ? track.subMixVal * wetLevel : 0;
+  setAudioParam(track.octaveGainNode.gain, track.octaveOutputTarget);
+}
+
+function toggleFX(index, type) {
+  if (!audioInitialized) return alert('Bitte zuerst die Engine entriegeln.');
+
+  const track = tracks[index];
+  const propertyByType = {
+    octaver: 'fxOctaverActive',
+    chorus: 'fxChorusActive',
+    echo: 'fxEchoActive',
+    reverb: 'fxReverbActive'
+  };
+  const property = propertyByType[type];
+  if (!property) return;
+
+  track[property] = !track[property];
+  const idType = type === 'octaver' ? 'octave' : type;
+  document.getElementById(`fx-${idType}-${index}`)
+    .classList.toggle('fx-active', track[property]);
+
+  if (type === 'octaver') {
+    if (track.fxOctaverActive) {
+      ensureTrackOctaveLayers(index);
+      track.layers.forEach(layer => {
+        if (layer.octaveBuffer && layer.sourceNode) playOctaveLayer(index, layer);
+      });
+    } else {
+      track.layers.forEach(stopOctaveLayerNode);
+    }
+    refreshOctaveButton(index);
+  }
+  updateFxRouting(index);
+}
+
+function updateFXMix(index, value) {
+  tracks[index].fxMixVal = Number(value);
+  updateFxRouting(index);
+}
+
+function updateSubMix(index, value) {
+  tracks[index].subMixVal = Number(value);
+  updateFxRouting(index);
+}
+
+function updateEchoDelay(index) {
+  const delay = tracks[index].echoDelayNode;
+  if (!delay || !audioContext) return;
+  const dottedEighth = getSecondsPerBeat() * 0.75;
+  setAudioParam(delay.delayTime, dottedEighth, 0.03);
+}
+
+function stopLayerNode(layer) {
+  if (layer.sourceNode) {
+    try { layer.sourceNode.stop(); } catch (_) {}
+    try { layer.sourceNode.disconnect(); } catch (_) {}
+    layer.sourceNode = null;
+  }
+  stopOctaveLayerNode(layer);
+}
+
+function stopAllLayerNodes(index) {
+  tracks[index].layers.forEach(stopLayerNode);
+}
+
+function playSingleLayer(index, layer, requestedStartTime = null) {
+  if (!audioContext || !layer.buffer) return;
+
+  const track = tracks[index];
+  stopLayerNode(layer);
+
+  const source = audioContext.createBufferSource();
+  source.buffer = layer.buffer;
+  source.loop = true;
+  source.loopStart = 0;
+  source.loopEnd = layer.buffer.duration;
+  source.connect(track.inputNode);
+
+  let startTime = requestedStartTime ?? (audioContext.currentTime + 0.025);
+  if (masterStartTime !== null) startTime = Math.max(startTime, audioContext.currentTime + 0.012);
+
+  let offset = 0;
+  if (masterStartTime !== null && masterLoopDuration) {
+    offset = positiveModulo(startTime - masterStartTime, masterLoopDuration);
+    if (offset >= layer.buffer.duration - (1 / layer.buffer.sampleRate)) offset = 0;
+  }
+
+  source.start(startTime, offset);
+  layer.sourceNode = source;
+
+  if (track.fxOctaverActive) {
+    if (layer.octaveBuffer) playOctaveLayer(index, layer, startTime, offset);
+    else ensureOctaveLayer(index, layer);
+  }
+}
+
+function playLoop(index, requestedStartTime = null) {
+  const track = tracks[index];
+  if (track.layers.length === 0) {
+    track.state = STATE.EMPTY;
+    updateUI(index);
+    return;
+  }
+
+  stopAllLayerNodes(index);
+  const startTime = requestedStartTime ?? (audioContext.currentTime + 0.025);
+  track.layers.forEach(layer => playSingleLayer(index, layer, startTime));
+
+  track.state = STATE.PLAYING;
+  updateUI(index);
+}
+
+function addLayerToTrack(index, audioBuffer, { startPlayback = true, runAutoSync = false } = {}) {
+  const track = tracks[index];
+  const hadActivePlayback = track.layers.some(layer => layer.sourceNode);
+  const layer = {
+    id: ++octaveLayerSequence,
+    buffer: audioBuffer,
+    sourceNode: null,
+    octaveBuffer: null,
+    octaveSourceNode: null,
+    octaveJobId: null,
+    disposed: false
+  };
+  track.layers.push(layer);
+  track.redoStack = [];
+
+  if (track.fxOctaverActive) ensureOctaveLayer(index, layer);
+
+  if (startPlayback) {
+    if (hadActivePlayback) playSingleLayer(index, layer);
+    else playLoop(index);
+  }
+
+  if (runAutoSync && track.layers.length >= 2) {
+    setTimeout(() => runAutoCorrelation(index, layer), 200);
+  }
+
+  renderTrackWaveform(index);
+  updateUI(index);
+  return layer;
+}
+
+function timeToWorkletFrame(time) {
+  return Math.round(time * audioContext.sampleRate) + workletFrameOffset;
+}
+
+function timeToFrame(time) {
+  return Math.max(0, Math.round(time * audioContext.sampleRate));
+}
+
+function frameToTime(frame) {
+  return frame / audioContext.sampleRate;
+}
+
+function samplesToAudioBuffer(samples) {
+  const buffer = audioContext.createBuffer(1, samples.length, audioContext.sampleRate);
+  buffer.copyToChannel(samples, 0);
+  return buffer;
+}
+
+function getSecondsPerBeat() {
+  if (masterSyncMode === MASTER_SYNC_MODE.GRID && masterLoopDuration && masterBeats) {
+    return masterLoopDuration / masterBeats;
+  }
+  return 60 / currentBpm;
+}
+
+function getBarDuration() {
+  return getSecondsPerBeat() * BEATS_PER_BAR;
+}
+
+function nextBoundary(origin, period, afterTime) {
+  const cycles = Math.max(0, Math.ceil((afterTime - origin) / period));
+  return origin + cycles * period;
+}
+
+function clearTrackStartTimer(track) {
+  if (track.startUiTimer) {
+    clearTimeout(track.startUiTimer);
+    track.startUiTimer = null;
+  }
+}
+
+function updateCountInButtonText() {
+  countinBtn.textContent = countInBars === 0
+    ? '🥁 Einzähler: Aus'
+    : `🥁 Einzähler: ${countInBars} Takt(e)`;
+  countinBtn.classList.toggle('active-toggle', countInBars > 0);
+}
+
+function refreshTransportControls() {
+  const captureActive = tracks.some(track => Boolean(track.captureId));
+  const freeMasterPending = masterSyncMode === MASTER_SYNC_MODE.FREE && masterLoopDuration === null;
+
+  bpmSlider.disabled = captureActive || (
+    masterLoopDuration !== null && masterSyncMode === MASTER_SYNC_MODE.GRID
+  );
+
+  syncModeBtn.disabled = captureActive || masterLoopDuration !== null;
+  syncModeBtn.textContent = masterSyncMode === MASTER_SYNC_MODE.FREE
+    ? '🔓 Master: Frei'
+    : '🔒 Master: Takt-Sync';
+  syncModeBtn.classList.toggle('active-toggle', masterSyncMode === MASTER_SYNC_MODE.FREE);
+  syncModeBtn.title = masterSyncMode === MASTER_SYNC_MODE.FREE
+    ? 'Freier Master: Die erste Aufnahme startet und endet unabhängig vom Metronom. Weitere Spuren folgen exakt diesem Loop.'
+    : 'Takt-Sync: Die Masteraufnahme folgt Metronom, Einzähler und Taktgrenzen.';
+
+  if (!countInRunning) countinBtn.disabled = freeMasterPending;
+  countinBtn.title = freeMasterPending
+    ? 'Beim freien Master startet die erste Aufnahme direkt. Nach dem Masterloop ist der Einzähler wieder verfügbar.'
+    : 'Einzähler vor der nächsten Aufnahme';
+}
+
+function refreshBpmLock() {
+  refreshTransportControls();
+}
+
+function resetCaptureFields(track) {
+  clearTrackStartTimer(track);
+  track.captureId = null;
+  track.captureKind = null;
+  track.captureStartTime = null;
+  track.captureStopTime = null;
+  track.captureBars = null;
+  track.captureSegments = [];
+  track.finishOverdubRequested = false;
+  track.lastCycleIndex = -1;
+  refreshBpmLock();
+}
+
+function assembleFreeCapture(track, totalFrames) {
+  const ordered = [...track.captureSegments].sort((a, b) => a.sequence - b.sequence);
+  const samples = new Float32Array(totalFrames);
+  let offset = 0;
+  for (const segment of ordered) {
+    const writable = Math.min(segment.samples.length, samples.length - offset);
+    if (writable <= 0) break;
+    samples.set(segment.samples.subarray(0, writable), offset);
+    offset += writable;
+  }
+  return samples;
+}
+
+function handlePcmCaptureMessage(event) {
+  const message = event.data || {};
+  const index = Number(message.trackIndex);
+  if (!Number.isInteger(index) || !tracks[index]) return;
+
+  const track = tracks[index];
+  const matchesCapture = message.id === track.captureId;
+  const matchesPreview = message.id === track.previewId;
+  if (!matchesCapture && !matchesPreview) return;
+
+  if (message.type === 'segment') {
+    track.captureSegments.push({ sequence: message.sequence, samples: message.samples });
+    return;
+  }
+
+  /* ============================================================
+     [V1.9] CHAINED OVERDUB – Fix: SOFORT hörbar, nicht erst eine
+     Runde später.
+
+     Der Worklet sendet 'cycle' am Ende einer Runde. Zu diesem Zeit-
+     punkt ist `audioContext.currentTime` genau am Anfang der nächsten
+     Runde (oder 1–3 ms dahinter). Wenn wir `playSingleLayer` ohne
+     requestedStartTime aufrufen, wird der Layer mit
+     `startTime = now + 25 ms` und `offset = positiveModulo(startTime -
+     masterStartTime, masterLoopDuration)` gestartet – also mit fast 0
+     Offset, phasenkongruent zu den anderen Layern.
+     ============================================================ */
+  if (message.type === 'cycle') {
+    if (typeof message.cycleIndex === 'number') {
+      if (message.cycleIndex <= track.lastCycleIndex) return;
+      track.lastCycleIndex = message.cycleIndex;
+    }
+
+    const buffer = samplesToAudioBuffer(message.samples);
+    const hadActivePlayback = track.layers.some(l => l.sourceNode);
+
+    const newLayer = addLayerToTrack(index, buffer, {
+      startPlayback: false,
+      runAutoSync: false
+    });
+
+    if (hadActivePlayback) {
+      // [V1.9-Fix] Sofort mit Phasen-Offset starten – nicht erst zur
+      // nächsten Loop-Grenze. Damit ist die neue Runde ab jetzt hörbar.
+      playSingleLayer(index, newLayer);
+    } else if (masterStartTime !== null && masterLoopDuration !== null) {
+      // Kein aktives Playback: alle Layer neu starten, phasenkongruent.
+      playLoop(index);
+    } else {
+      playSingleLayer(index, newLayer);
+    }
+
+    setTimeout(() => runAutoCorrelation(index, newLayer), 250);
+
+    if (track.state !== STATE.FINISHING) track.state = STATE.OVERDUBBING;
+    setInfo(
+      `CH ${index + 1}: Overdub-Runde ${message.cycleIndex + 1} läuft • Aufnahme läuft weiter`,
+      '#ff9500'
+    );
+    updateUI(index);
+    return;
+  }
+
+  if (message.type === 'complete') {
+    track.state = STATE.PROCESSING;
+    updateUI(index);
+
+    let samples = message.samples;
+    if (!samples) samples = assembleFreeCapture(track, message.totalFrames || 0);
+    if (!samples || samples.length === 0) {
+      resetCaptureFields(track);
+      track.state = track.layers.length ? STATE.PLAYING : STATE.EMPTY;
+      updateUI(index);
+      return;
+    }
+
+    const kind = track.captureKind;
+    const startTime = frameToTime(message.startFrame);
+    const buffer = samplesToAudioBuffer(samples);
+
+    if (kind === 'first-master') {
+      masterLoopFrames = samples.length;
+      masterLoopDuration = masterLoopFrames / audioContext.sampleRate;
+      masterStartTime = startTime;
+      masterBeats = masterSyncMode === MASTER_SYNC_MODE.GRID
+        ? Math.max(BEATS_PER_BAR, (track.captureBars || 1) * BEATS_PER_BAR)
+        : null;
+
+      if (masterSyncMode === MASTER_SYNC_MODE.GRID) {
+        transportOriginTime = masterStartTime;
+      }
+      refreshTransportControls();
+
+      addLayerToTrack(index, buffer, { startPlayback: false });
+      const takeoverTime = nextBoundary(
+        masterStartTime,
+        masterLoopDuration,
+        audioContext.currentTime + Math.max(SCHEDULING_SAFETY, 0.08)
+      );
+      playLoop(index, takeoverTime);
+      track.previewId = message.previewActive ? message.id : null;
+      if (track.previewId) {
+        pcmCaptureNode.port.postMessage({
+          type: 'stop-preview',
+          id: track.previewId,
+          stopFrame: timeToWorkletFrame(takeoverTime)
+        });
+      }
+
+      if (masterSyncMode === MASTER_SYNC_MODE.GRID) {
+        setInfo(
+          `PCM-Sync: ${masterBeats / BEATS_PER_BAR} Takt(e) • sofortige Wiedergabe`,
+          '#34c759'
+        );
       } else {
-        mixRecorder.stop();
-        isRecordingMix = false;
-        recordMixBtn.textContent = '🔴 Mix Aufnehmen';
-        recordMixBtn.style.background = '#007aff';
+        setInfo(
+          `Freier Master: ${masterLoopDuration.toFixed(2)} s • weitere Spuren folgen diesem Loop`,
+          '#34c759'
+        );
+      }
+      tracks.forEach((_, trackIndex) => updateEchoDelay(trackIndex));
+      if (isMetronomeOn && masterSyncMode === MASTER_SYNC_MODE.GRID) restartMetronome();
+    } else {
+      addLayerToTrack(index, buffer, { startPlayback: true, runAutoSync: true });
+    }
+
+    resetCaptureFields(track);
+    track.state = STATE.PLAYING;
+    updateUI(index);
+    return;
+  }
+
+  if (message.type === 'ended') {
+    resetCaptureFields(track);
+    track.state = track.layers.length ? STATE.PLAYING : STATE.EMPTY;
+    setInfo(`CH ${index + 1}: Overdub beendet`, '#34c759');
+    updateUI(index);
+    return;
+  }
+
+  if (message.type === 'preview-ended') {
+    if (track.previewId === message.id) track.previewId = null;
+    return;
+  }
+
+  if (message.type === 'cancelled') {
+    resetCaptureFields(track);
+    track.state = track.layers.length ? STATE.STOPPED : STATE.EMPTY;
+    updateUI(index);
+  }
+}
+
+function scheduleStateAtCaptureStart(index, kind, startTime) {
+  const track = tracks[index];
+  clearTrackStartTimer(track);
+  const delay = Math.max(0, (startTime - audioContext.currentTime) * 1000);
+  track.startUiTimer = setTimeout(() => {
+    if (!track.captureId) return;
+    track.startUiTimer = null;
+    track.state = kind === 'overdub' ? STATE.OVERDUBBING : STATE.RECORDING;
+    setInfo(
+      kind === 'overdub' ? `CH ${index + 1}: OVERDUB` : `CH ${index + 1}: REC`,
+      kind === 'overdub' ? '#ff9500' : '#ff3b30'
+    );
+    updateUI(index);
+  }, delay);
+}
+
+function scheduleManualCountInClicks(countStartTime, totalBeats) {
+  countInClickNodes.forEach(node => {
+    try { node.stop(); } catch (_) {}
+  });
+  countInClickNodes = [];
+
+  const secondsPerBeat = getSecondsPerBeat();
+  for (let beat = 0; beat < totalBeats; beat++) {
+    const node = scheduleClick(
+      beat % BEATS_PER_BAR === 0 ? 1200 : 800,
+      countStartTime + beat * secondsPerBeat
+    );
+    if (node) countInClickNodes.push(node);
+  }
+}
+
+function startCountInUi(index, countStartTime, captureStartTime) {
+  const totalBeats = countInBars * BEATS_PER_BAR;
+  if (totalBeats <= 0) return;
+
+  countInRunning = true;
+  countInTrackIndex = index;
+  countinBtn.disabled = true;
+  metronomeBtn.disabled = true;
+  tracks.forEach((_, trackIndex) => updateUI(trackIndex));
+  const token = ++countInToken;
+  const secondsPerBeat = getSecondsPerBeat();
+
+  const update = () => {
+    if (token !== countInToken) return;
+    if (audioContext.currentTime < countStartTime) {
+      setInfo('COUNT-IN wartet auf Taktgrenze', '#ff9500');
+      return;
+    }
+    const remaining = Math.min(
+      totalBeats,
+      Math.max(0, Math.ceil((captureStartTime - audioContext.currentTime) / secondsPerBeat))
+    );
+    setInfo(`COUNT-IN: ${remaining}`, '#ff9500');
+  };
+  update();
+  countInUiTimer = setInterval(update, 40);
+
+  countInStartTimer = setTimeout(() => {
+    if (token !== countInToken) return;
+    clearInterval(countInUiTimer);
+    countInUiTimer = null;
+    countInStartTimer = null;
+    countInRunning = false;
+    countInTrackIndex = null;
+    countinBtn.disabled = false;
+    metronomeBtn.disabled = false;
+    countInClickNodes = [];
+    refreshTransportControls();
+    tracks.forEach((_, trackIndex) => updateUI(trackIndex));
+  }, Math.max(0, (captureStartTime - audioContext.currentTime) * 1000));
+}
+
+function cancelCountIn(index = null) {
+  if (index !== null && countInTrackIndex !== null && index !== countInTrackIndex) return;
+  countInToken++;
+  countInRunning = false;
+  countInTrackIndex = null;
+  if (countInUiTimer) clearInterval(countInUiTimer);
+  if (countInStartTimer) clearTimeout(countInStartTimer);
+  countInUiTimer = null;
+  countInStartTimer = null;
+  countinBtn.disabled = false;
+  metronomeBtn.disabled = false;
+  refreshTransportControls();
+  countInClickNodes.forEach(node => {
+    try { node.stop(); } catch (_) {}
+  });
+  countInClickNodes = [];
+}
+
+function calculateCaptureTiming(kind) {
+  const now = audioContext.currentTime;
+  const secondsPerBeat = getSecondsPerBeat();
+  const barDuration = secondsPerBeat * BEATS_PER_BAR;
+  const countDuration = countInBars * barDuration;
+  let startTime;
+  let countStartTime = null;
+
+  if (masterLoopDuration && masterStartTime !== null) {
+    startTime = nextBoundary(
+      masterStartTime,
+      masterLoopDuration,
+      now + SCHEDULING_SAFETY + countDuration
+    );
+    countStartTime = countInBars > 0 ? startTime - countDuration : null;
+    if (masterSyncMode === MASTER_SYNC_MODE.GRID) transportOriginTime = masterStartTime;
+  } else if (kind === 'first-master' && masterSyncMode === MASTER_SYNC_MODE.FREE) {
+    startTime = now + FREE_MASTER_START_SAFETY;
+    countStartTime = null;
+  } else if (kind === 'first-master' && countInBars > 0) {
+    countStartTime = now + Math.max(SCHEDULING_SAFETY, 0.12);
+    transportOriginTime = countStartTime;
+    startTime = countStartTime + countDuration;
+  } else {
+    if (transportOriginTime === null) {
+      transportOriginTime = now + SCHEDULING_SAFETY;
+    }
+
+    if (countInBars > 0) {
+      startTime = nextBoundary(
+        transportOriginTime,
+        barDuration,
+        now + SCHEDULING_SAFETY + countDuration
+      );
+      countStartTime = startTime - countDuration;
+    } else if (isMetronomeOn) {
+      startTime = nextBoundary(
+        transportOriginTime,
+        barDuration,
+        now + SCHEDULING_SAFETY
+      );
+    } else {
+      startTime = now + SCHEDULING_SAFETY;
+      transportOriginTime = startTime;
+    }
+  }
+
+  return { startTime, countStartTime, secondsPerBeat };
+}
+
+function armCapture(index, kind) {
+  const track = tracks[index];
+  if (!pcmCaptureNode || track.captureId) return;
+
+  const { startTime, countStartTime } = calculateCaptureTiming(kind);
+  let startFrame = timeToWorkletFrame(startTime) - latencyCompensationFrames;
+  startFrame = Math.max(0, startFrame);
+  const id = `track-${index}-${++captureSequence}`;
+  const message = {
+    type: 'start',
+    id,
+    trackIndex: index,
+    startFrame
+  };
+
+  track.lastCycleIndex = -1;
+
+  if (kind === 'first-master') {
+    message.mode = 'free';
+  } else if (kind === 'first-sync') {
+    message.mode = 'fixed';
+    const baseOffsetFrames = Math.round(track.channelBaseOffset * audioContext.sampleRate);
+    message.startFrame = startFrame + baseOffsetFrames;
+    message.stopFrame = message.startFrame + masterLoopFrames;
+    track.captureStopTime = frameToTime(message.stopFrame - workletFrameOffset);
+  } else if (kind === 'overdub') {
+    const masterGridFrame = timeToWorkletFrame(masterStartTime);
+    const loopFrames = masterLoopFrames;
+    const baseOffsetFrames = Math.round(track.channelBaseOffset * audioContext.sampleRate);
+
+    const desiredFrame = startFrame + baseOffsetFrames;
+    const nowFrame = timeToWorkletFrame(audioContext.currentTime + OVERDUB_MIN_LOOKAHEAD);
+
+    const cyclesFromGrid = Math.floor((nowFrame - masterGridFrame) / loopFrames);
+    let snappedStartFrame = masterGridFrame + (cyclesFromGrid + 1) * loopFrames;
+
+    while (snappedStartFrame < desiredFrame) {
+      snappedStartFrame += loopFrames;
+    }
+
+    message.mode = 'continuous';
+    message.chunkFrames = masterLoopFrames;
+    message.startFrame = snappedStartFrame;
+
+    track.captureStartTime = frameToTime(snappedStartFrame - workletFrameOffset);
+  } else {
+    return;
+  }
+
+  track.captureId = id;
+  track.captureKind = kind;
+  if (kind !== 'overdub') {
+    track.captureStartTime = startTime;
+  }
+  track.captureSegments = [];
+  track.finishOverdubRequested = false;
+  track.state = STATE.ARMED;
+  pcmCaptureNode.port.postMessage(message);
+  scheduleStateAtCaptureStart(index, kind, track.captureStartTime);
+
+  if (countInBars > 0 && countStartTime !== null && kind !== 'overdub') {
+    if (!isMetronomeOn) scheduleManualCountInClicks(countStartTime, countInBars * BEATS_PER_BAR);
+    startCountInUi(index, countStartTime, startTime);
+  }
+
+  if (isMetronomeOn) restartMetronome();
+  refreshBpmLock();
+  updateUI(index);
+}
+
+function startFirstRecording(index) {
+  const track = tracks[index];
+  if (!audioInitialized || track.state !== STATE.EMPTY || countInRunning) return;
+  armCapture(index, masterLoopDuration === null ? 'first-master' : 'first-sync');
+}
+
+function computeSmartStopBarBoundary(startTime, now) {
+  const barDuration = getSecondsPerBeat() * BEATS_PER_BAR;
+  const beatDuration = getSecondsPerBeat();
+  const elapsed = now - startTime;
+  const elapsedBeats = elapsed / beatDuration;
+
+  if (elapsedBeats < 1) {
+    return {
+      stopTime: startTime + barDuration,
+      bars: 1,
+      completedBar: false
+    };
+  }
+
+  const currentBarIndex = Math.floor(elapsedBeats / BEATS_PER_BAR);
+  const beatsInCurrentBar = elapsedBeats - currentBarIndex * BEATS_PER_BAR;
+
+  if (beatsInCurrentBar >= SMART_STOP_MIN_BEATS) {
+    const stopTime = startTime + (currentBarIndex + 1) * barDuration;
+    return {
+      stopTime,
+      bars: currentBarIndex + 1,
+      completedBar: true
+    };
+  }
+
+  if (currentBarIndex === 0) {
+    return {
+      stopTime: startTime + barDuration,
+      bars: 1,
+      completedBar: false
+    };
+  }
+
+  const stopTime = startTime + currentBarIndex * barDuration;
+  return {
+    stopTime,
+    bars: currentBarIndex,
+    completedBar: false
+  };
+}
+
+function stopRecordingAndPlay(index) {
+  const track = tracks[index];
+  if (track.captureKind !== 'first-master' || !track.captureId) return;
+
+  let stopTime;
+  if (masterSyncMode === MASTER_SYNC_MODE.FREE) {
+    const earliestStop = track.captureStartTime + MIN_FREE_MASTER_DURATION;
+    stopTime = Math.max(audioContext.currentTime + FREE_MASTER_STOP_SAFETY, earliestStop);
+    track.captureBars = null;
+    setInfo('Freier Master wird geschlossen • Wiedergabe startet sofort', '#ff9500');
+  } else {
+    const now = audioContext.currentTime;
+    const result = computeSmartStopBarBoundary(track.captureStartTime, now);
+    stopTime = result.stopTime;
+    track.captureBars = result.bars;
+
+    if (result.completedBar) {
+      setInfo(`Takt vollendet • ${result.bars} Takt(e) gespeichert`, '#34c759');
+    } else if (result.bars > 0) {
+      setInfo(`Zu kurz • auf ${result.bars} Takt(e) gekürzt`, '#ff9500');
+    }
+  }
+
+  track.captureStopTime = stopTime;
+  track.state = STATE.FINISHING;
+  pcmCaptureNode.port.postMessage({
+    type: 'set-stop',
+    id: track.captureId,
+    stopFrame: timeToWorkletFrame(stopTime) - latencyCompensationFrames
+  });
+  updateUI(index);
+}
+
+function startOverdub(index) {
+  const track = tracks[index];
+  if (!audioInitialized || track.layers.length === 0 || masterLoopDuration === null || countInRunning) return;
+
+  // [V1.9] Layer-Limit prüfen
+  if (track.layers.length >= MAX_LAYERS_PER_TRACK) {
+    setInfo(
+      `CH ${index + 1}: Layer-Limit (${MAX_LAYERS_PER_TRACK}) erreicht • Undo oder Clear`,
+      '#ff3b30'
+    );
+    return;
+  }
+  armCapture(index, 'overdub');
+}
+
+function requestFinishOverdub(index) {
+  const track = tracks[index];
+  if (track.state !== STATE.OVERDUBBING || !track.captureId) return;
+  track.finishOverdubRequested = true;
+  track.state = STATE.FINISHING;
+  pcmCaptureNode.port.postMessage({ type: 'finish', id: track.captureId });
+  setInfo(`CH ${index + 1}: Ende nach aktueller Runde`, '#ff9500');
+  updateUI(index);
+}
+
+function cancelActiveRecording(index) {
+  const track = tracks[index];
+  if (!track.captureId) return;
+  cancelCountIn(index);
+  pcmCaptureNode?.port.postMessage({ type: 'cancel', id: track.captureId });
+  resetCaptureFields(track);
+}
+
+function handleMainAction(index) {
+  if (!audioInitialized || !pcmCaptureNode) {
+    alert('Bitte zuerst die Engine entriegeln.');
+    return;
+  }
+
+  const track = tracks[index];
+  switch (track.state) {
+    case STATE.EMPTY:
+      startFirstRecording(index);
+      break;
+    case STATE.ARMED:
+      cancelActiveRecording(index);
+      track.state = track.layers.length ? STATE.STOPPED : STATE.EMPTY;
+      updateUI(index);
+      break;
+    case STATE.RECORDING:
+      if (track.captureKind === 'first-master') stopRecordingAndPlay(index);
+      break;
+    case STATE.PLAYING:
+      startOverdub(index);
+      break;
+    case STATE.OVERDUBBING:
+      requestFinishOverdub(index);
+      break;
+    case STATE.STOPPED:
+      playLoop(index);
+      break;
+    default:
+      break;
+  }
+}
+
+function stopTrackPreview(index) {
+  const track = tracks[index];
+  if (!track.previewId) return;
+  pcmCaptureNode?.port.postMessage({ type: 'stop-preview-now', id: track.previewId });
+  track.previewId = null;
+}
+
+function stopLoop(index) {
+  const track = tracks[index];
+  stopTrackPreview(index);
+
+  if ([STATE.ARMED, STATE.RECORDING, STATE.OVERDUBBING, STATE.FINISHING, STATE.PROCESSING].includes(track.state)) {
+    cancelActiveRecording(index);
+  }
+
+  stopAllLayerNodes(index);
+  track.state = track.layers.length ? STATE.STOPPED : STATE.EMPTY;
+  updateUI(index);
+  checkAndResetMasterSync();
+}
+
+function undoLayer(index) {
+  const track = tracks[index];
+  if (track.layers.length === 0 || isTrackBusy(track)) return;
+
+  const removed = track.layers.pop();
+  stopLayerNode(removed);
+  track.redoStack.push(removed);
+
+  if (track.layers.length === 0) {
+    track.state = STATE.EMPTY;
+  }
+
+  updateFxRouting(index);
+  renderTrackWaveform(index);
+  updateUI(index);
+  checkAndResetMasterSync();
+}
+
+function redoLayer(index) {
+  const track = tracks[index];
+  if (track.redoStack.length === 0 || isTrackBusy(track)) return;
+
+  const restored = track.redoStack.pop();
+  restored.sourceNode = null;
+  restored.octaveSourceNode = null;
+  restored.disposed = false;
+  track.layers.push(restored);
+  if (track.fxOctaverActive) ensureOctaveLayer(index, restored);
+
+  if (track.state === STATE.PLAYING) {
+    playSingleLayer(index, restored);
+  } else if (track.state === STATE.EMPTY) {
+    playLoop(index);
+  }
+
+  updateFxRouting(index);
+  renderTrackWaveform(index);
+  updateUI(index);
+}
+
+function clearTrack(index) {
+  const track = tracks[index];
+  cancelActiveRecording(index);
+  stopTrackPreview(index);
+  stopAllLayerNodes(index);
+
+  [...track.layers, ...track.redoStack].forEach(layer => { layer.disposed = true; });
+  track.octaveGeneration++;
+  recalculateOctaveJobState(index);
+  track.layers = [];
+  track.redoStack = [];
+  track.state = STATE.EMPTY;
+  track.lastCycleIndex = -1;
+  refreshOctaveButton(index);
+  updateFxRouting(index);
+  clearCanvas(index);
+  resetNudgeUI(index);
+  updateUI(index);
+  checkAndResetMasterSync();
+}
+
+function checkAndResetMasterSync() {
+  const allEmpty = tracks.every(track => track.layers.length === 0);
+  if (!allEmpty) return;
+
+  masterLoopDuration = null;
+  masterLoopFrames = null;
+  masterStartTime = null;
+  masterBeats = null;
+  refreshTransportControls();
+
+  if (isMetronomeOn && audioContext) {
+    transportOriginTime = audioContext.currentTime + 0.08;
+    restartMetronome();
+  } else {
+    transportOriginTime = null;
+  }
+  tracks.forEach((_, i) => resetNudgeUI(i));
+  setInfo(audioInitialized ? 'AudioWorklet bereit' : 'Audio inaktiv', audioInitialized ? '#34c759' : '#8e8e93');
+}
+
+function isTrackBusy(track) {
+  return [
+    STATE.ARMED,
+    STATE.RECORDING,
+    STATE.PROCESSING,
+    STATE.OVERDUBBING,
+    STATE.FINISHING
+  ].includes(track.state);
+}
+
+function updateUI(index) {
+  const track = tracks[index];
+  const mainBtn = document.getElementById(`main-btn-${index}`);
+  const stopBtn = document.getElementById(`stop-btn-${index}`);
+  const undoBtn = document.getElementById(`undo-btn-${index}`);
+  const redoBtn = document.getElementById(`redo-btn-${index}`);
+  const statusBadge = document.getElementById(`status-${index}`);
+  const layerCount = document.getElementById(`layer-count-${index}`);
+
+  statusBadge.textContent = track.state;
+  layerCount.textContent = `${track.layers.length} / ${MAX_LAYERS_PER_TRACK}`;
+  layerCount.classList.remove('warn', 'max');
+  if (track.layers.length >= MAX_LAYERS_PER_TRACK) {
+    layerCount.classList.add('max');
+  } else if (track.layers.length >= WARN_LAYERS_THRESHOLD) {
+    layerCount.classList.add('warn');
+  }
+
+  mainBtn.disabled = countInRunning && countInTrackIndex !== index;
+
+  switch (track.state) {
+    case STATE.EMPTY:
+      mainBtn.textContent = '⏺️ REC';
+      mainBtn.className = 'btn-rec';
+      mainBtn.disabled = false;
+      break;
+    case STATE.ARMED:
+      mainBtn.textContent = '✕ ABBRECHEN';
+      mainBtn.className = 'secondary';
+      mainBtn.disabled = false;
+      break;
+    case STATE.RECORDING:
+      if (track.captureKind === 'first-master') {
+        mainBtn.textContent = masterSyncMode === MASTER_SYNC_MODE.FREE
+          ? '⏹️ LOOP JETZT'
+          : '⏹️ ENDE AUF TAKT';
+        mainBtn.className = 'btn-play';
+      } else {
+        mainBtn.textContent = '⏺️ 1 RUNDE';
+        mainBtn.className = 'secondary';
+        mainBtn.disabled = true;
+      }
+      break;
+    case STATE.PROCESSING:
+      mainBtn.textContent = '⏳ PCM';
+      mainBtn.className = 'secondary';
+      mainBtn.disabled = true;
+      break;
+    case STATE.PLAYING:
+      // [V1.9] Layer-Limit berücksichtigen
+      if (track.layers.length >= MAX_LAYERS_PER_TRACK) {
+        mainBtn.textContent = '⚠️ MAX LAYER';
+        mainBtn.className = 'btn-limit';
+        mainBtn.disabled = true;
+        mainBtn.title = `Max. ${MAX_LAYERS_PER_TRACK} Layer erreicht – Undo oder Clear`;
+      } else {
+        mainBtn.textContent = '🟠 OVERDUB';
+        mainBtn.className = 'btn-overdub';
+        mainBtn.disabled = false;
+        mainBtn.title = '';
+      }
+      break;
+    case STATE.OVERDUBBING:
+      mainBtn.textContent = '✓ NACH RUNDE BEENDEN';
+      mainBtn.className = 'btn-play';
+      mainBtn.disabled = false;
+      break;
+    case STATE.FINISHING:
+      mainBtn.textContent = track.captureKind === 'first-master'
+        ? (masterSyncMode === MASTER_SYNC_MODE.FREE ? '⏳ LOOP SCHLIESST' : '⏳ BIS TAKTGRENZE')
+        : '⏳ LETZTE RUNDE';
+      mainBtn.className = 'secondary';
+      mainBtn.disabled = true;
+      break;
+    case STATE.STOPPED:
+      mainBtn.textContent = '▶️ PLAY';
+      mainBtn.className = 'btn-play';
+      mainBtn.disabled = false;
+      break;
+  }
+
+  const busy = isTrackBusy(track);
+  stopBtn.disabled = track.state === STATE.EMPTY || track.state === STATE.STOPPED;
+  undoBtn.disabled = busy || track.layers.length === 0;
+  redoBtn.disabled = busy || track.redoStack.length === 0;
+}
+
+function updateVolume(index, value) {
+  const volume = Number(value);
+  const track = tracks[index];
+  track.volume = volume;
+  document.getElementById(`vol-val-${index}`).textContent = `${Math.round(volume * 100)}%`;
+  if (!track.isMuted) setAudioParam(track.channelGainNode?.gain, volume);
+}
+
+function updateEQ(index, type, value) {
+  const gain = Number(value);
+  const track = tracks[index];
+  if (type === 'bass') setAudioParam(track.bassNode?.gain, gain);
+  if (type === 'treble') setAudioParam(track.trebleNode?.gain, gain);
+}
+
+function updatePan(index, value) {
+  const panParam = tracks[index].pannerNode?.pan;
+  if (panParam) setAudioParam(panParam, Number(value));
+}
+
+function toggleMute(index) {
+  const track = tracks[index];
+  const button = document.getElementById(`mute-btn-${index}`);
+  track.isMuted = !track.isMuted;
+  setAudioParam(track.channelGainNode?.gain, track.isMuted ? 0 : track.volume);
+  button.textContent = track.isMuted ? 'Unmute' : 'Mute';
+  button.classList.toggle('muted', track.isMuted);
+}
+
+function startVisualLoop() {
+  if (visualLoopStarted) return;
+  visualLoopStarted = true;
+
+  const render = () => {
+    if (!audioContext) {
+      requestAnimationFrame(render);
+      return;
+    }
+    tracks.forEach((track, index) => {
+      const vuFill = document.getElementById(`vu-${index}`);
+      const progressBar = document.getElementById(`progress-${index}`);
+      const hasPlayback = track.layers.some(layer => layer.sourceNode || layer.octaveSourceNode);
+
+      if (hasPlayback && track.analyserNode) {
+        track.analyserNode.getByteTimeDomainData(track.meterData);
+        let sumSquares = 0;
+        for (const value of track.meterData) {
+          const normalized = (value - 128) / 128;
+          sumSquares += normalized * normalized;
+        }
+        const rms = Math.sqrt(sumSquares / track.meterData.length);
+        const meterPercent = Math.min(100, Math.max(0, rms * 220));
+        vuFill.style.height = `${meterPercent}%`;
+      } else {
+        vuFill.style.height = '0%';
+      }
+
+      if (masterStartTime !== null && masterLoopDuration && (hasPlayback || isTrackBusy(track))) {
+        const progress = positiveModulo(
+          audioContext.currentTime - masterStartTime,
+          masterLoopDuration
+        ) / masterLoopDuration;
+        progressBar.style.left = `${progress * 100}%`;
+      } else {
+        progressBar.style.left = '0%';
       }
     });
+
+    requestAnimationFrame(render);
+  };
+
+  requestAnimationFrame(render);
+}
+
+function renderTrackWaveform(index) {
+  const canvas = document.getElementById(`canvas-${index}`);
+  const context = canvas.getContext('2d');
+  const layers = tracks[index].layers;
+  const rect = canvas.getBoundingClientRect();
+  const width = Math.max(1, rect.width);
+  const height = Math.max(1, rect.height);
+  const dpr = window.devicePixelRatio || 1;
+
+  canvas.width = Math.round(width * dpr);
+  canvas.height = Math.round(height * dpr);
+  context.setTransform(dpr, 0, 0, dpr, 0, 0);
+  context.clearRect(0, 0, width, height);
+
+  if (layers.length === 0) return;
+
+  const dataArrays = layers.map(layer => layer.buffer.getChannelData(0));
+  const invSqrt = 1 / Math.max(1, Math.sqrt(layers.length));
+  const bars = 48;
+  const barWidth = width / bars;
+  context.fillStyle = '#ff9500';
+
+  for (let bar = 0; bar < bars; bar++) {
+    let peak = 0;
+
+    for (let probe = 0; probe < 48; probe++) {
+      const position = (bar + probe / 48) / bars;
+      let mixedSample = 0;
+
+      for (let i = 0; i < dataArrays.length; i++) {
+        const data = dataArrays[i];
+        const sampleIndex = Math.min(data.length - 1, Math.floor(position * data.length));
+        mixedSample += data[sampleIndex] || 0;
+      }
+
+      peak = Math.max(peak, Math.abs(mixedSample * invSqrt));
+    }
+
+    const barHeight = Math.max(2, Math.min(height, peak * height * 1.8));
+    context.fillRect(
+      bar * barWidth,
+      (height - barHeight) / 2,
+      Math.max(1, barWidth - 1),
+      barHeight
+    );
+  }
+}
+
+function clearCanvas(index) {
+  const canvas = document.getElementById(`canvas-${index}`);
+  const context = canvas.getContext('2d');
+  context.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+window.addEventListener('resize', () => {
+  tracks.forEach((_, index) => renderTrackWaveform(index));
+});
+
+document.getElementById('clear-all-btn').addEventListener('click', () => {
+  cancelCountIn();
+  tracks.forEach((_, index) => clearTrack(index));
+});
+
+bpmSlider.addEventListener('input', event => {
+  const gridMasterLocksBpm = masterLoopDuration !== null && masterSyncMode === MASTER_SYNC_MODE.GRID;
+  if (gridMasterLocksBpm || tracks.some(track => isTrackBusy(track))) {
+    event.target.value = String(currentBpm);
+    return;
+  }
+
+  currentBpm = Number(event.target.value);
+  bpmVal.textContent = `${currentBpm} BPM`;
+  transportOriginTime = audioContext ? audioContext.currentTime + 0.08 : null;
+  tracks.forEach((_, index) => updateEchoDelay(index));
+  if (isMetronomeOn) restartMetronome();
+});
+
+function scheduleClick(frequency = 1000, when = audioContext.currentTime) {
+  if (!audioContext || !monitorBusNode) return null;
+
+  const oscillator = audioContext.createOscillator();
+  const gain = audioContext.createGain();
+  oscillator.frequency.setValueAtTime(frequency, when);
+  gain.gain.setValueAtTime(0.14, when);
+  gain.gain.exponentialRampToValueAtTime(0.001, when + 0.035);
+  oscillator.connect(gain);
+  gain.connect(monitorBusNode);
+  oscillator.start(when);
+  oscillator.stop(when + 0.04);
+  oscillator.addEventListener?.('ended', () => {
+    try { oscillator.disconnect(); } catch (_) {}
+    try { gain.disconnect(); } catch (_) {}
+  });
+  return oscillator;
+}
+
+function metronomeScheduler() {
+  if (!isMetronomeOn || !audioContext || transportOriginTime === null) return;
+  const secondsPerBeat = getSecondsPerBeat();
+  const horizon = audioContext.currentTime + 0.12;
+
+  while (transportOriginTime + metronomeNextBeatIndex * secondsPerBeat < horizon) {
+    const when = transportOriginTime + metronomeNextBeatIndex * secondsPerBeat;
+    if (when >= audioContext.currentTime - 0.01) {
+      const node = scheduleClick(
+        metronomeNextBeatIndex % BEATS_PER_BAR === 0 ? 1200 : 800,
+        when
+      );
+      if (node) metronomeClickNodes.push(node);
+    }
+    metronomeNextBeatIndex++;
+  }
+
+  metronomeTimer = setTimeout(metronomeScheduler, 25);
+}
+
+function startMetronome() {
+  if (!audioContext) return;
+  if (masterStartTime !== null && masterSyncMode === MASTER_SYNC_MODE.GRID) {
+    transportOriginTime = masterStartTime;
+  }
+  if (transportOriginTime === null) transportOriginTime = audioContext.currentTime + 0.08;
+
+  const secondsPerBeat = getSecondsPerBeat();
+  metronomeNextBeatIndex = Math.max(
+    0,
+    Math.ceil((audioContext.currentTime + 0.025 - transportOriginTime) / secondsPerBeat)
+  );
+  metronomeScheduler();
+}
+
+function stopMetronome() {
+  if (metronomeTimer) clearTimeout(metronomeTimer);
+  metronomeTimer = null;
+  metronomeClickNodes.forEach(node => {
+    try { node.stop(); } catch (_) {}
+  });
+  metronomeClickNodes = [];
+}
+
+function restartMetronome() {
+  stopMetronome();
+  if (isMetronomeOn) startMetronome();
+}
+
+metronomeBtn.addEventListener('click', () => {
+  if (!audioInitialized) return alert('Bitte zuerst die Engine entriegeln.');
+  isMetronomeOn = !isMetronomeOn;
+  metronomeBtn.classList.toggle('active-toggle', isMetronomeOn);
+  isMetronomeOn ? startMetronome() : stopMetronome();
+});
+
+countinBtn.addEventListener('click', () => {
+  if (countInRunning || countinBtn.disabled) return;
+  countInBars = (countInBars + 1) % 3;
+  updateCountInButtonText();
+});
+
+syncModeBtn.addEventListener('click', () => {
+  if (syncModeBtn.disabled) return;
+  masterSyncMode = masterSyncMode === MASTER_SYNC_MODE.GRID
+    ? MASTER_SYNC_MODE.FREE
+    : MASTER_SYNC_MODE.GRID;
+
+  if (masterSyncMode === MASTER_SYNC_MODE.FREE) {
+    countInBars = 0;
+    updateCountInButtonText();
+    setInfo('Freier Master aktiv • Metronom läuft unabhängig', '#bf5af2');
+  } else {
+    setInfo('Takt-Sync aktiv • Master folgt Metronom und Einzähler', '#34c759');
+  }
+
+  refreshTransportControls();
+  if (isMetronomeOn) restartMetronome();
+});
+
+function openInfoDialog() {
+  infoOverlay.hidden = false;
+  document.body.classList.add('modal-open');
+  requestAnimationFrame(() => infoCloseBtn.focus());
+}
+
+function closeInfoDialog() {
+  if (infoOverlay.hidden) return;
+  infoOverlay.hidden = true;
+  document.body.classList.remove('modal-open');
+  infoBtn.focus();
+}
+
+infoBtn.addEventListener('click', openInfoDialog);
+infoCloseBtn.addEventListener('click', closeInfoDialog);
+infoOverlay.addEventListener('click', event => {
+  if (event.target === infoOverlay) closeInfoDialog();
+});
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && !infoOverlay.hidden) closeInfoDialog();
+});
+
+function buildMixerStrips() {
+  const container = document.getElementById('mixer-strips');
+  const fragment = document.createDocumentFragment();
+
+  for (let i = 0; i < TRACK_COUNT; i++) {
+    const strip = document.createElement('div');
+    strip.className = 'channel-strip';
+    strip.id = `strip-${i}`;
+    strip.innerHTML = `
+      <div class="strip-title"><span>CH ${i + 1}</span><span class="layer-count" id="layer-count-${i}">0 / ${MAX_LAYERS_PER_TRACK}</span></div>
+      <div class="waveform-container">
+        <canvas class="waveform-mini" id="canvas-${i}"></canvas>
+        <div class="progress-bar-line" id="progress-${i}"></div>
+      </div>
+      <div class="status-badge" id="status-${i}">EMPTY</div>
+      <button class="btn-rec" id="main-btn-${i}">⏺️ REC</button>
+      <div class="action-row">
+        <button class="secondary" id="stop-btn-${i}" disabled>⏹️</button>
+        <button class="secondary" id="undo-btn-${i}" disabled>↩️</button>
+        <button class="secondary" id="redo-btn-${i}" disabled>↪️</button>
+      </div>
+      <div class="nudge-section">
+        <div class="nudge-title">
+          <span>Nudge (neu: Auto-Sync)</span>
+          <span class="auto-badge" id="auto-badge-${i}">AUTO</span>
+        </div>
+        <div class="nudge-row">
+          <button class="secondary nudge-btn" id="nudge-minus-${i}" title="Neueste Ebene früher">◀ −</button>
+          <span class="nudge-readout" id="nudge-val-${i}">0 ms</span>
+          <button class="secondary nudge-btn" id="nudge-plus-${i}" title="Neueste Ebene später">+ ▶</button>
+        </div>
+        <div class="nudge-row">
+          <select id="nudge-step-${i}" class="nudge-step" title="Schrittweite">
+            <option value="1">1 ms</option>
+            <option value="5" selected>5 ms</option>
+            <option value="10">10 ms</option>
+            <option value="20">20 ms</option>
+          </select>
+          <button class="secondary nudge-btn" id="nudge-zero-${i}" title="Auf 0 zurücksetzen">0</button>
+          <button class="btn-play nudge-btn" id="nudge-set-${i}" title="Offset als Channel-Basis bestätigen">✓ Set</button>
+        </div>
+      </div>
+      <div class="fx-section">
+        <div class="fx-title">✨ Insert FX</div>
+        <div class="fx-grid">
+          <button class="secondary fx-btn" id="fx-octave-${i}" title="Berechnet jede Loop-Ebene nach der Aufnahme eine Oktave tiefer.">⬇️ Octave -1</button>
+          <button class="secondary fx-btn" id="fx-chorus-${i}">🌊 Chorus</button>
+          <button class="secondary fx-btn" id="fx-echo-${i}">📻 Echo</button>
+          <button class="secondary fx-btn" id="fx-reverb-${i}">🏛️ Hall</button>
+        </div>
+        <div class="knob-grid" style="margin-top:2px;">
+          <div class="knob-control"><label>FX Mix</label><input type="range" id="fx-mix-${i}" min="0" max="1" step="0.05" value="0.55"></div>
+          <div class="knob-control"><label>Oct Mix</label><input type="range" id="sub-mix-${i}" min="0" max="1.5" step="0.05" value="1"></div>
+        </div>
+      </div>
+      <div class="fader-meter-wrapper">
+        <input type="range" class="v-fader" id="fader-${i}" min="0" max="2.5" step="0.05" value="1.1">
+        <div class="vu-meter"><div class="vu-fill" id="vu-${i}"></div></div>
+      </div>
+      <div class="val-readout" style="text-align: center;" id="vol-val-${i}">110%</div>
+      <div class="knob-grid">
+        <div class="knob-control"><label>Bass</label><input type="range" id="bass-${i}" min="-12" max="12" value="0" step="1"></div>
+        <div class="knob-control"><label>Treble</label><input type="range" id="treble-${i}" min="-12" max="12" value="0" step="1"></div>
+      </div>
+      <div class="knob-control"><label>Pan</label><input type="range" id="pan-${i}" min="-1" max="1" value="0" step="0.1"></div>
+      <div class="action-row">
+        <button class="secondary" id="mute-btn-${i}">Mute</button>
+        <button class="secondary" id="clear-btn-${i}">Clear</button>
+      </div>
+    `;
+    fragment.appendChild(strip);
+  }
+
+  container.appendChild(fragment);
+
+  for (let i = 0; i < TRACK_COUNT; i++) {
+    document.getElementById(`main-btn-${i}`).addEventListener('click', () => handleMainAction(i));
+    document.getElementById(`stop-btn-${i}`).addEventListener('click', () => stopLoop(i));
+    document.getElementById(`undo-btn-${i}`).addEventListener('click', () => undoLayer(i));
+    document.getElementById(`redo-btn-${i}`).addEventListener('click', () => redoLayer(i));
+
+    document.getElementById(`nudge-minus-${i}`).addEventListener('click', () => nudgeLatestLayer(i, -1));
+    document.getElementById(`nudge-plus-${i}`).addEventListener('click', () => nudgeLatestLayer(i, +1));
+    document.getElementById(`nudge-zero-${i}`).addEventListener('click', () => setNudge(i, 0));
+    document.getElementById(`nudge-set-${i}`).addEventListener('click', () => confirmNudge(i));
+    document.getElementById(`nudge-step-${i}`).addEventListener('change', e => {
+      tracks[i].nudgeStepMs = Number(e.target.value);
+    });
+
+    document.getElementById(`fx-octave-${i}`).addEventListener('click', () => toggleFX(i, 'octaver'));
+    document.getElementById(`fx-chorus-${i}`).addEventListener('click', () => toggleFX(i, 'chorus'));
+    document.getElementById(`fx-echo-${i}`).addEventListener('click', () => toggleFX(i, 'echo'));
+    document.getElementById(`fx-reverb-${i}`).addEventListener('click', () => toggleFX(i, 'reverb'));
+    document.getElementById(`fx-mix-${i}`).addEventListener('input', e => updateFXMix(i, e.target.value));
+    document.getElementById(`sub-mix-${i}`).addEventListener('input', e => updateSubMix(i, e.target.value));
+    document.getElementById(`fader-${i}`).addEventListener('input', e => updateVolume(i, e.target.value));
+    document.getElementById(`bass-${i}`).addEventListener('input', e => updateEQ(i, 'bass', e.target.value));
+    document.getElementById(`treble-${i}`).addEventListener('input', e => updateEQ(i, 'treble', e.target.value));
+    document.getElementById(`pan-${i}`).addEventListener('input', e => updatePan(i, e.target.value));
+    document.getElementById(`mute-btn-${i}`).addEventListener('click', () => toggleMute(i));
+    document.getElementById(`clear-btn-${i}`).addEventListener('click', () => clearTrack(i));
+  }
+}
+
+buildMixerStrips();
+
+updateCountInButtonText();
+refreshTransportControls();
+
+recordMixBtn.addEventListener('click', () => {
+  if (!audioInitialized || !mixDestinationNode || typeof MediaRecorder === 'undefined') {
+    alert('Bitte zuerst die Engine entriegeln.');
+    return;
+  }
+
+  if (!isRecordingMix) {
+    const chunks = [];
+    const recorder = new MediaRecorder(mixDestinationNode.stream, chooseRecorderOptions());
+    mixChunks = chunks;
+    mixRecorder = recorder;
+
+    recorder.addEventListener('dataavailable', event => {
+      if (event.data.size > 0) chunks.push(event.data);
+    });
+
+    recorder.addEventListener('stop', () => {
+      if (chunks.length > 0) {
+        const mimeType = recorder.mimeType || chunks[0].type;
+        const blob = new Blob(chunks, { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement('a');
+        anchor.href = url;
+        anchor.download = `loop-mix-${Date.now()}.${extensionForMime(mimeType)}`;
+        anchor.hidden = true;
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 5000);
+      }
+
+      if (mixRecorder === recorder) mixRecorder = null;
+      isRecordingMix = false;
+      recordMixBtn.disabled = false;
+      recordMixBtn.textContent = '🔴 Mix aufnehmen';
+      recordMixBtn.style.background = '#007aff';
+    });
+
+    recorder.start();
+    isRecordingMix = true;
+    recordMixBtn.textContent = '⏹️ Stopp & Export';
+    recordMixBtn.style.background = '#ff3b30';
+  } else {
+    if (mixRecorder?.state === 'recording') {
+      recordMixBtn.disabled = true;
+      mixRecorder.stop();
+    }
+  }
+});
+
+window.addEventListener('pagehide', () => {
+  cancelCountIn();
+  stopMetronome();
+  tracks.forEach((track, index) => {
+    cancelActiveRecording(index);
+    stopAllLayerNodes(index);
+    try { track.chorusLfoNode?.stop(); } catch (_) {}
+  });
+  rawMicStream?.getTracks().forEach(track => track.stop());
+  try { pcmCaptureNode?.port.close(); } catch (_) {}
+  if (pcmWorkletModuleUrl) URL.revokeObjectURL(pcmWorkletModuleUrl);
+  try { octaveWorker?.terminate(); } catch (_) {}
+  if (octaveWorkerUrl) URL.revokeObjectURL(octaveWorkerUrl);
+});
+
+tracks.forEach((_, index) => updateUI(index));
   </script>
 </body>
 </html>
